@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# API Monitoring & Incident Response Platform
 
-## Getting Started
+Production-ready API monitoring SaaS foundation built with Next.js 14 App Router, MongoDB, Redis, BullMQ, Node Cron, and Nodemailer.
 
-First, run the development server:
+## 1. Folder Structure
+
+```text
+src/
+ ┣ app/
+ ┃ ┣ actions/
+ ┃ ┣ api/
+ ┃ ┣ incidents/
+ ┃ ┣ monitors/[id]/
+ ┃ ┣ status/
+ ┣ components/
+ ┣ lib/
+ ┃ ┣ db.ts
+ ┃ ┣ redis.ts
+ ┃ ┣ queue.ts
+ ┃ ┣ mail.ts
+ ┣ models/
+ ┃ ┣ Monitor.ts
+ ┃ ┣ Incident.ts
+ ┣ worker/
+ ┃ ┗ monitorWorker.ts
+ ┣ jobs/
+ ┃ ┗ monitorJob.ts
+```
+
+## 2. Project Setup
+
+```bash
+npm install
+cp .env.example .env.local
+```
+
+Fill environment variables:
+
+```env
+MONGODB_URI=
+REDIS_URL=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_SECURE=
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+ALERT_EMAIL_TO=
+APP_URL=http://localhost:3000
+```
+
+## 3. Run Services
+
+Run all processes (web + worker + scheduler):
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Or run independently:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run dev:web
+npm run dev:worker
+npm run dev:scheduler
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 4. Implemented Features
 
-## Learn More
+- Monitor creation (Server Actions + API route)
+- Async health checks (BullMQ + worker)
+- Response time measurement (Axios timing)
+- Incident detection and lifecycle (open/retry/recovered)
+- Email alerts for down/recovery (Nodemailer)
+- ISR status page (`/status`)
+- Incident timeline (`/incidents`)
+- Latency charts (Recharts)
+- Dashboard (`/`)
+- Monitoring scheduler (Node Cron)
 
-To learn more about Next.js, take a look at the following resources:
+## 5. API Routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `GET /api/monitors`
+- `POST /api/monitors`
+- `GET /api/incidents`
+- `GET /api/status`
