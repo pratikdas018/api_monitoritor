@@ -13,7 +13,8 @@ type MonitorActionState = {
   message: string;
 };
 
-const ENQUEUE_TIMEOUT_MS = Number(process.env.MONITOR_ENQUEUE_TIMEOUT_MS ?? "1200");
+const ENQUEUE_TIMEOUT_MS = Number(process.env.MONITOR_ENQUEUE_TIMEOUT_MS ?? "4500");
+const CREATE_INLINE_CHECK_TIMEOUT_MS = Number(process.env.MONITOR_CREATE_INLINE_TIMEOUT_MS ?? "2500");
 
 function revalidateMonitoringPages() {
   revalidatePath("/");
@@ -48,10 +49,19 @@ async function enqueueCheckWithInlineFallback(
       return "inline" as const;
     }
 
-    // For create flow, never block the user on queue/redis latency.
     if (reason === "create") {
-      console.warn("[action] queue unavailable for create flow, deferring initial check", error);
-      return "deferred" as const;
+      // Keep create fast, but avoid persistent UNKNOWN status when queue is flaky.
+      console.warn("[action] queue unavailable for create flow, running short inline check", error);
+      try {
+        await withTimeout(
+          runMonitorCheck(monitorId, { requestTimeoutMs: CREATE_INLINE_CHECK_TIMEOUT_MS }),
+          CREATE_INLINE_CHECK_TIMEOUT_MS + 1_000,
+        );
+        return "inline" as const;
+      } catch (inlineError) {
+        console.warn("[action] inline create check failed, deferring to scheduler", inlineError);
+        return "deferred" as const;
+      }
     }
 
     throw error;
@@ -98,6 +108,8 @@ export async function createMonitorAction(
       message:
         executionMode === "queued"
           ? "Monitor created and scheduled."
+          : executionMode === "inline"
+            ? "Monitor created and checked immediately."
           : executionMode === "deferred"
             ? "Monitor created. Initial check deferred (queue unavailable)."
             : "Monitor created.",

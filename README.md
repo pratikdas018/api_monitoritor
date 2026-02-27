@@ -87,6 +87,9 @@ REDIS_URL=redis://127.0.0.1:6379
 DEFAULT_MONITOR_TIMEOUT_MS=10000
 MONITOR_SCHEDULER_CRON=*/1 * * * *
 MONITOR_WORKER_CONCURRENCY=5
+MONITOR_ENQUEUE_TIMEOUT_MS=4500
+MONITOR_CREATE_INLINE_TIMEOUT_MS=2500
+DISPLAY_TIMEZONE=Asia/Kolkata
 
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
@@ -98,6 +101,9 @@ ALERT_EMAIL_TO=<comma-separated-emails>
 
 APP_URL=http://localhost:3000
 ```
+
+Production note:
+- Set `REDIS_URL` explicitly in all runtimes (web, worker, scheduler). In production, missing `REDIS_URL` now fails fast instead of falling back to localhost.
 
 ## Getting Started
 

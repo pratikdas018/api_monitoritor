@@ -210,7 +210,11 @@ async function resolveIncident(params: {
   });
 }
 
-export async function runMonitorCheck(monitorId: string) {
+type RunMonitorCheckOptions = {
+  requestTimeoutMs?: number;
+};
+
+export async function runMonitorCheck(monitorId: string, options?: RunMonitorCheckOptions) {
   await connectToDatabase();
   const monitor = await Monitor.findById(monitorId);
 
@@ -218,8 +222,9 @@ export async function runMonitorCheck(monitorId: string) {
     return;
   }
 
+  const requestTimeoutMs = options?.requestTimeoutMs ?? monitor.timeoutMs;
   const checkedAt = new Date();
-  const result = await checkEndpoint(monitor.url, monitor.timeoutMs);
+  const result = await checkEndpoint(monitor.url, requestTimeoutMs);
   const nextStatus: MonitorStatus = result.success ? "up" : "down";
   const totalChecks = monitor.totalChecks + 1;
   const totalFailures = monitor.totalFailures + (result.success ? 0 : 1);

@@ -23,5 +23,14 @@ export function createRedisConnection() {
 }
 
 function getRedisUrl() {
-  return process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
+  const redisUrl = process.env.REDIS_URL?.trim();
+  if (redisUrl) {
+    return redisUrl;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("REDIS_URL is missing in production.");
+  }
+
+  return "redis://127.0.0.1:6379";
 }
