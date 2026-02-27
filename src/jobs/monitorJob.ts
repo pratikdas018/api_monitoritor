@@ -22,7 +22,11 @@ async function enqueueDueMonitors() {
 
   const dueMonitors = await Monitor.find({
     status: { $ne: "paused" },
-    nextCheckAt: { $lte: now },
+    $or: [
+      { nextCheckAt: { $lte: now } },
+      { nextCheckAt: { $exists: false } },
+      { nextCheckAt: null },
+    ],
   })
     .select("_id")
     .lean();

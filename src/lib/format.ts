@@ -4,10 +4,23 @@ export function formatDateTime(value: string | Date | null) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "Unknown";
 
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
+  const displayTimeZone =
+    process.env.NEXT_PUBLIC_DISPLAY_TIMEZONE ||
+    process.env.DISPLAY_TIMEZONE ||
+    "Asia/Kolkata";
+
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: displayTimeZone,
+    }).format(date);
+  } catch {
+    return new Intl.DateTimeFormat("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(date);
+  }
 }
 
 export function formatDurationMs(value: number | null) {

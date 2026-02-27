@@ -169,11 +169,19 @@ async function resolveIncident(params: {
   statusCode: number | null;
   responseTimeMs: number | null;
 }) {
-  const incident = await Incident.findOneAndUpdate(
-    {
-      monitorId: params.monitorId,
-      status: { $in: ["OPEN", "open"] },
-    },
+  const openIncidents = await Incident.find({
+    monitorId: params.monitorId,
+    status: { $in: ["OPEN", "open"] },
+  })
+    .select("_id")
+    .lean();
+
+  if (openIncidents.length === 0) return;
+
+  const incidentIds = openIncidents.map((incident) => incident._id);
+
+  await Incident.updateMany(
+    { _id: { $in: incidentIds } },
     {
       $set: {
         status: "RESOLVED",
@@ -190,15 +198,12 @@ async function resolveIncident(params: {
         },
       },
     },
-    { returnDocument: "after", sort: { startedAt: -1 } },
   );
-
-  if (!incident) return;
 
   await sendMonitorRecoveredEmail({
     monitorName: params.monitorName,
     monitorUrl: params.monitorUrl,
-    incidentId: incident.id,
+    incidentId: String(incidentIds[0]),
     checkedAt: params.checkedAt,
     responseTimeMs: params.responseTimeMs,
     statusCode: params.statusCode,

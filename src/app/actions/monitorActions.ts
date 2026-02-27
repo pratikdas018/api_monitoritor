@@ -13,10 +13,25 @@ type MonitorActionState = {
   message: string;
 };
 
+const ENQUEUE_TIMEOUT_MS = Number(process.env.MONITOR_ENQUEUE_TIMEOUT_MS ?? "1200");
+
 function revalidateMonitoringPages() {
   revalidatePath("/");
   revalidatePath("/status");
   revalidatePath("/incidents");
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`Timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+
+    promise
+      .then((value) => resolve(value))
+      .catch((error) => reject(error))
+      .finally(() => clearTimeout(timeout));
+  });
 }
 
 async function enqueueCheckWithInlineFallback(
@@ -24,13 +39,19 @@ async function enqueueCheckWithInlineFallback(
   reason: "create" | "manual" | "scheduler",
 ) {
   try {
-    await enqueueMonitorCheck(monitorId, reason);
+    await withTimeout(enqueueMonitorCheck(monitorId, reason), ENQUEUE_TIMEOUT_MS);
     return "queued" as const;
   } catch (error) {
-    if (reason === "manual" || reason === "create") {
+    if (reason === "manual") {
       console.warn("[action] queue unavailable, running inline check", error);
       await runMonitorCheck(monitorId);
       return "inline" as const;
+    }
+
+    // For create flow, never block the user on queue/redis latency.
+    if (reason === "create") {
+      console.warn("[action] queue unavailable for create flow, deferring initial check", error);
+      return "deferred" as const;
     }
 
     throw error;
@@ -77,7 +98,9 @@ export async function createMonitorAction(
       message:
         executionMode === "queued"
           ? "Monitor created and scheduled."
-          : "Monitor created and checked immediately (queue unavailable).",
+          : executionMode === "deferred"
+            ? "Monitor created. Initial check deferred (queue unavailable)."
+            : "Monitor created.",
     };
   } catch (error) {
     console.error("[action] monitor created but initial check failed", error);
