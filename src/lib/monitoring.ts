@@ -1,12 +1,22 @@
 import axios from "axios";
 import { Types } from "mongoose";
 
+import { dispatchAlert } from "@/lib/alerts";
 import { connectToDatabase } from "@/lib/db";
-import { sendMonitorDownEmail, sendMonitorRecoveredEmail } from "@/lib/mail";
+import { getRegionLatencyJitterMs, getMonitoringRegions } from "@/lib/regions";
+import { enqueueMonitorCheck } from "@/lib/queue";
+import CheckHistory from "@/models/CheckHistory";
 import Incident from "@/models/Incident";
-import Monitor, { type IntervalMinutes, type MonitorStatus } from "@/models/Monitor";
+import Monitor, {
+  type IntervalMinutes,
+  type MonitorRegion,
+  type MonitorStatus,
+  type RegionCheckState,
+} from "@/models/Monitor";
 
 const MAX_LATENCY_SAMPLES = 300;
+const FAILURE_RETRY_DELAYS_MS = [10_000, 30_000] as const;
+const HIGH_LATENCY_THRESHOLD_MS = Number(process.env.MONITOR_HIGH_LATENCY_MS ?? "2000");
 
 function getDefaultMonitorName(url: string) {
   try {
@@ -40,8 +50,13 @@ type CheckResult = {
   errorMessage: string | null;
 };
 
-async function checkEndpoint(url: string, timeoutMs: number): Promise<CheckResult> {
+async function checkEndpoint(
+  url: string,
+  timeoutMs: number,
+  region: MonitorRegion,
+): Promise<CheckResult> {
   const startedAt = Date.now();
+  const jitterMs = getRegionLatencyJitterMs(region);
 
   try {
     const response = await axios.get(url, {
@@ -49,7 +64,7 @@ async function checkEndpoint(url: string, timeoutMs: number): Promise<CheckResul
       validateStatus: () => true,
     });
 
-    const responseTimeMs = Date.now() - startedAt;
+    const responseTimeMs = Date.now() - startedAt + jitterMs;
     const success = response.status >= 200 && response.status < 400;
 
     return {
@@ -61,7 +76,7 @@ async function checkEndpoint(url: string, timeoutMs: number): Promise<CheckResul
   } catch (error) {
     return {
       success: false,
-      responseTimeMs: Date.now() - startedAt,
+      responseTimeMs: Date.now() - startedAt + jitterMs,
       statusCode: null,
       errorMessage: getErrorMessage(error),
     };
@@ -80,30 +95,68 @@ function calculateUptimePercentage(totalChecks: number, totalFailures: number) {
   return Number((((totalChecks - totalFailures) / totalChecks) * 100).toFixed(2));
 }
 
+function mergeRegionState(
+  states: RegionCheckState[],
+  input: {
+    region: MonitorRegion;
+    status: MonitorStatus;
+    latencyMs: number | null;
+    statusCode: number | null;
+    errorMessage: string | null;
+    checkedAt: Date;
+  },
+) {
+  const next = states.filter((entry) => entry.region !== input.region);
+  next.push({
+    region: input.region,
+    status: input.status,
+    latencyMs: input.latencyMs,
+    statusCode: input.statusCode,
+    errorMessage: input.errorMessage,
+    checkedAt: input.checkedAt,
+  });
+
+  return next.sort((a, b) => a.region.localeCompare(b.region));
+}
+
+function aggregateMonitorStatus(states: RegionCheckState[]): MonitorStatus {
+  if (states.length === 0) return "unknown";
+  if (states.some((state) => state.status === "down")) return "down";
+  if (states.every((state) => state.status === "up")) return "up";
+  if (states.every((state) => state.status === "paused")) return "paused";
+  if (states.some((state) => state.status === "up")) return "up";
+  return "unknown";
+}
+
 async function createIncident(params: {
   monitorId: Types.ObjectId;
+  projectId: Types.ObjectId | null;
   monitorName: string;
   monitorUrl: string;
+  region: MonitorRegion;
   checkedAt: Date;
   statusCode: number | null;
   responseTimeMs: number | null;
   errorMessage: string | null;
 }) {
+  const message = `[${params.region}] ${params.errorMessage ?? "Endpoint returned an invalid response."}`;
+
   try {
     const incident = await Incident.create({
       monitorId: params.monitorId,
-      message: params.errorMessage ?? "Endpoint returned an invalid response.",
+      projectId: params.projectId,
+      message,
       monitorName: params.monitorName,
       monitorUrl: params.monitorUrl,
       status: "OPEN",
       startedAt: params.checkedAt,
       lastFailureAt: params.checkedAt,
       failureCount: 1,
-      lastError: params.errorMessage,
+      lastError: message,
       events: [
         {
           type: "down",
-          message: params.errorMessage ?? "Endpoint returned an invalid response.",
+          message,
           statusCode: params.statusCode,
           responseTimeMs: params.responseTimeMs,
           timestamp: params.checkedAt,
@@ -111,17 +164,19 @@ async function createIncident(params: {
       ],
     });
 
-    await sendMonitorDownEmail({
+    await dispatchAlert({
+      eventType: "down",
+      projectId: params.projectId ? String(params.projectId) : null,
       monitorName: params.monitorName,
       monitorUrl: params.monitorUrl,
       incidentId: incident.id,
+      region: params.region,
       checkedAt: params.checkedAt,
       responseTimeMs: params.responseTimeMs,
       statusCode: params.statusCode,
-      errorMessage: params.errorMessage,
+      errorMessage: message,
     });
   } catch (error: unknown) {
-    // Another concurrent worker already created the OPEN incident.
     if (
       typeof error === "object" &&
       error !== null &&
@@ -137,22 +192,25 @@ async function createIncident(params: {
 
 async function appendIncidentFailure(params: {
   incidentId: Types.ObjectId;
+  region: MonitorRegion;
   checkedAt: Date;
   statusCode: number | null;
   responseTimeMs: number | null;
   errorMessage: string | null;
 }) {
+  const message = `[${params.region}] ${params.errorMessage ?? "Endpoint still failing."}`;
+
   await Incident.findByIdAndUpdate(params.incidentId, {
     $inc: { failureCount: 1 },
     $set: {
       lastFailureAt: params.checkedAt,
-      lastError: params.errorMessage,
-      message: params.errorMessage ?? "Endpoint still failing.",
+      lastError: message,
+      message,
     },
     $push: {
       events: {
         type: "retry",
-        message: params.errorMessage ?? "Endpoint still failing.",
+        message,
         statusCode: params.statusCode,
         responseTimeMs: params.responseTimeMs,
         timestamp: params.checkedAt,
@@ -163,8 +221,10 @@ async function appendIncidentFailure(params: {
 
 async function resolveIncident(params: {
   monitorId: Types.ObjectId;
+  projectId: Types.ObjectId | null;
   monitorName: string;
   monitorUrl: string;
+  region: MonitorRegion;
   checkedAt: Date;
   statusCode: number | null;
   responseTimeMs: number | null;
@@ -186,12 +246,12 @@ async function resolveIncident(params: {
       $set: {
         status: "RESOLVED",
         resolvedAt: params.checkedAt,
-        message: "Endpoint recovered successfully.",
+        message: `[${params.region}] Endpoint recovered successfully.`,
       },
       $push: {
         events: {
           type: "recovered",
-          message: "Endpoint responded successfully.",
+          message: `[${params.region}] Endpoint responded successfully.`,
           statusCode: params.statusCode,
           responseTimeMs: params.responseTimeMs,
           timestamp: params.checkedAt,
@@ -200,21 +260,57 @@ async function resolveIncident(params: {
     },
   );
 
-  await sendMonitorRecoveredEmail({
+  await dispatchAlert({
+    eventType: "recovery",
+    projectId: params.projectId ? String(params.projectId) : null,
     monitorName: params.monitorName,
     monitorUrl: params.monitorUrl,
     incidentId: String(incidentIds[0]),
+    region: params.region,
     checkedAt: params.checkedAt,
     responseTimeMs: params.responseTimeMs,
     statusCode: params.statusCode,
   });
 }
 
-type RunMonitorCheckOptions = {
+async function saveHistory(params: {
+  monitorId: Types.ObjectId;
+  projectId: Types.ObjectId | null;
+  region: MonitorRegion;
+  status: MonitorStatus;
+  latency: number | null;
+  statusCode: number | null;
+  errorMessage: string | null;
+  timestamp: Date;
+}) {
+  await CheckHistory.create({
+    monitorId: params.monitorId,
+    projectId: params.projectId,
+    region: params.region,
+    status: params.status,
+    latency: params.latency,
+    statusCode: params.statusCode,
+    errorMessage: params.errorMessage,
+    timestamp: params.timestamp,
+  });
+}
+
+export type RunMonitorCheckOptions = {
   requestTimeoutMs?: number;
+  region?: MonitorRegion;
+  reason?: "create" | "manual" | "scheduler";
+  retryAttempt?: number;
 };
 
 export async function runMonitorCheck(monitorId: string, options?: RunMonitorCheckOptions) {
+  if (!options?.region) {
+    const regions = getMonitoringRegions();
+    for (const region of regions) {
+      await runMonitorCheck(monitorId, { ...options, region });
+    }
+    return;
+  }
+
   await connectToDatabase();
   const monitor = await Monitor.findById(monitorId);
 
@@ -222,23 +318,34 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     return;
   }
 
-  const requestTimeoutMs = options?.requestTimeoutMs ?? monitor.timeoutMs;
+  const region = options.region;
   const checkedAt = new Date();
-  const result = await checkEndpoint(monitor.url, requestTimeoutMs);
-  const nextStatus: MonitorStatus = result.success ? "up" : "down";
-  const totalChecks = monitor.totalChecks + 1;
-  const totalFailures = monitor.totalFailures + (result.success ? 0 : 1);
+  const requestTimeoutMs = options?.requestTimeoutMs ?? monitor.timeoutMs;
+  const result = await checkEndpoint(monitor.url, requestTimeoutMs, region);
+  const regionStatus: MonitorStatus = result.success ? "up" : "down";
 
-  monitor.status = nextStatus;
-  monitor.totalChecks = totalChecks;
-  monitor.totalFailures = totalFailures;
-  monitor.consecutiveFailures = result.success ? 0 : monitor.consecutiveFailures + 1;
-  monitor.uptimePercentage = calculateUptimePercentage(totalChecks, totalFailures);
+  const nextRegionStates = mergeRegionState(monitor.regionStates ?? [], {
+    region,
+    status: regionStatus,
+    latencyMs: result.responseTimeMs,
+    statusCode: result.statusCode,
+    errorMessage: result.errorMessage,
+    checkedAt,
+  });
+  const aggregatedStatus = aggregateMonitorStatus(nextRegionStates);
+
+  const totalChecks = monitor.totalChecks + 1;
+  const totalFailures = monitor.totalFailures + (aggregatedStatus === "down" ? 1 : 0);
+
+  monitor.name = monitor.name || getDefaultMonitorName(monitor.url);
+  monitor.regionStates = nextRegionStates;
+  monitor.status = aggregatedStatus;
   monitor.lastCheckedAt = checkedAt;
   monitor.lastResponseTimeMs = result.responseTimeMs;
   monitor.lastStatusCode = result.statusCode;
-  monitor.nextCheckAt = calculateNextCheckAt(monitor.intervalMinutes);
-  monitor.name = monitor.name || getDefaultMonitorName(monitor.url);
+  monitor.totalChecks = totalChecks;
+  monitor.totalFailures = totalFailures;
+  monitor.uptimePercentage = calculateUptimePercentage(totalChecks, totalFailures);
   monitor.latencyLogs.push({
     checkedAt,
     success: result.success,
@@ -251,18 +358,45 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     monitor.latencyLogs = monitor.latencyLogs.slice(-MAX_LATENCY_SAMPLES);
   }
 
-  await monitor.save();
+  await saveHistory({
+    monitorId: monitor._id,
+    projectId: monitor.projectId ?? null,
+    region,
+    status: regionStatus,
+    latency: result.responseTimeMs,
+    statusCode: result.statusCode,
+    errorMessage: result.errorMessage,
+    timestamp: checkedAt,
+  });
 
   const openIncidentDoc = await Incident.findOne({
     monitorId: monitor._id,
     status: { $in: ["OPEN", "open"] },
   });
 
-  // Only create one open incident per monitor; repeated failures append retry events.
-  if (!result.success) {
+  if (aggregatedStatus === "down") {
+    monitor.consecutiveFailures = monitor.consecutiveFailures + 1;
+    monitor.retryStrikeCount = (monitor.retryStrikeCount ?? 0) + 1;
+
+    if (monitor.retryStrikeCount < 3) {
+      const delayMs = FAILURE_RETRY_DELAYS_MS[monitor.retryStrikeCount - 1] ?? 30_000;
+      monitor.nextCheckAt = new Date(Date.now() + delayMs);
+      await monitor.save();
+      await enqueueMonitorCheck(monitor.id, "scheduler", {
+        region,
+        retryAttempt: monitor.retryStrikeCount,
+        delayMs,
+      });
+      return;
+    }
+
+    monitor.nextCheckAt = calculateNextCheckAt(monitor.intervalMinutes);
+    await monitor.save();
+
     if (openIncidentDoc) {
       await appendIncidentFailure({
         incidentId: openIncidentDoc._id,
+        region,
         checkedAt,
         statusCode: result.statusCode,
         responseTimeMs: result.responseTimeMs,
@@ -273,25 +407,50 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
 
     await createIncident({
       monitorId: monitor._id,
+      projectId: monitor.projectId ?? null,
       monitorName: monitor.name,
       monitorUrl: monitor.url,
+      region,
       checkedAt,
       statusCode: result.statusCode,
       responseTimeMs: result.responseTimeMs,
       errorMessage: result.errorMessage,
     });
-
     return;
   }
+
+  monitor.consecutiveFailures = 0;
+  monitor.retryStrikeCount = 0;
+  monitor.nextCheckAt = calculateNextCheckAt(monitor.intervalMinutes);
+  await monitor.save();
 
   if (openIncidentDoc) {
     await resolveIncident({
       monitorId: monitor._id,
+      projectId: monitor.projectId ?? null,
       monitorName: monitor.name,
       monitorUrl: monitor.url,
+      region,
       checkedAt,
       statusCode: result.statusCode,
       responseTimeMs: result.responseTimeMs,
+    });
+  }
+
+  if (
+    result.responseTimeMs !== null &&
+    result.responseTimeMs > HIGH_LATENCY_THRESHOLD_MS
+  ) {
+    await dispatchAlert({
+      eventType: "high_latency",
+      projectId: monitor.projectId ? String(monitor.projectId) : null,
+      monitorName: monitor.name,
+      monitorUrl: monitor.url,
+      region,
+      checkedAt,
+      responseTimeMs: result.responseTimeMs,
+      statusCode: result.statusCode,
+      errorMessage: result.errorMessage,
     });
   }
 }

@@ -1,7 +1,17 @@
-import { Document, Model, Schema, model, models } from "mongoose";
+import { Document, Model, Schema, Types, model, models } from "mongoose";
 
 export type MonitorStatus = "up" | "down" | "paused" | "unknown";
 export type IntervalMinutes = 1 | 5 | 10;
+export type MonitorRegion = "India" | "US" | "Europe";
+
+export type RegionCheckState = {
+  region: MonitorRegion;
+  status: MonitorStatus;
+  latencyMs: number | null;
+  statusCode: number | null;
+  errorMessage?: string | null;
+  checkedAt: Date | null;
+};
 
 export type LatencyLog = {
   checkedAt: Date;
@@ -12,11 +22,14 @@ export type LatencyLog = {
 };
 
 export interface IMonitor extends Document {
+  userId: string;
+  projectId: Types.ObjectId | null;
   name: string;
   url: string;
   intervalMinutes: IntervalMinutes;
   timeoutMs: number;
   status: MonitorStatus;
+  regionStates: RegionCheckState[];
   lastCheckedAt: Date | null;
   nextCheckAt: Date;
   lastResponseTimeMs: number | null;
@@ -24,6 +37,7 @@ export interface IMonitor extends Document {
   totalChecks: number;
   totalFailures: number;
   consecutiveFailures: number;
+  retryStrikeCount: number;
   uptimePercentage: number;
   latencyLogs: LatencyLog[];
   createdAt: Date;
@@ -41,8 +55,42 @@ const latencyLogSchema = new Schema<LatencyLog>(
   { _id: false },
 );
 
+const regionCheckStateSchema = new Schema<RegionCheckState>(
+  {
+    region: {
+      type: String,
+      enum: ["India", "US", "Europe"],
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["up", "down", "paused", "unknown"],
+      required: true,
+      default: "unknown",
+    },
+    latencyMs: { type: Number, default: null },
+    statusCode: { type: Number, default: null },
+    errorMessage: { type: String, default: null },
+    checkedAt: { type: Date, default: null },
+  },
+  { _id: false },
+);
+
 const monitorSchema = new Schema<IMonitor>(
   {
+    userId: {
+      type: String,
+      required: true,
+      default: "legacy",
+      index: true,
+      trim: true,
+    },
+    projectId: {
+      type: Schema.Types.ObjectId,
+      ref: "Project",
+      default: null,
+      index: true,
+    },
     name: { type: String, required: true, trim: true },
     url: { type: String, required: true, trim: true },
     intervalMinutes: {
@@ -60,6 +108,7 @@ const monitorSchema = new Schema<IMonitor>(
       default: "unknown",
       index: true,
     },
+    regionStates: { type: [regionCheckStateSchema], default: [] },
     lastCheckedAt: { type: Date, default: null },
     nextCheckAt: {
       type: Date,
@@ -71,6 +120,7 @@ const monitorSchema = new Schema<IMonitor>(
     totalChecks: { type: Number, default: 0 },
     totalFailures: { type: Number, default: 0 },
     consecutiveFailures: { type: Number, default: 0 },
+    retryStrikeCount: { type: Number, default: 0 },
     uptimePercentage: { type: Number, default: 100 },
     latencyLogs: { type: [latencyLogSchema], default: [] },
   },
@@ -78,6 +128,8 @@ const monitorSchema = new Schema<IMonitor>(
 );
 
 monitorSchema.index({ nextCheckAt: 1, status: 1 });
+monitorSchema.index({ userId: 1, createdAt: -1 });
+monitorSchema.index({ projectId: 1, name: 1 });
 
 const Monitor: Model<IMonitor> =
   models.Monitor || model<IMonitor>("Monitor", monitorSchema);

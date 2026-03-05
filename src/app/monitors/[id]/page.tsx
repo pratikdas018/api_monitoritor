@@ -5,26 +5,45 @@ import { IncidentTimeline } from "@/components/IncidentTimeline";
 import { LatencyChart } from "@/components/LatencyChart";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDateTime, formatDurationMs, formatUptime } from "@/lib/format";
-import { getIncidentsByMonitorId, getMonitorById } from "@/lib/queries";
+import { getCheckHistoryByMonitorId, getIncidentsByMonitorId, getMonitorById } from "@/lib/queries";
+import { getSessionUserId } from "@/lib/serverSession";
 
 export const dynamic = "force-dynamic";
 
 type MonitorDetailPageProps = {
   params: Promise<{ id: string }> | { id: string };
+  searchParams?: Promise<{ range?: "24h" | "7d" | "30d" }> | { range?: "24h" | "7d" | "30d" };
 };
 
-export default async function MonitorDetailPage({ params }: MonitorDetailPageProps) {
+export default async function MonitorDetailPage({ params, searchParams }: MonitorDetailPageProps) {
   const resolvedParams = await Promise.resolve(params);
+  const resolvedSearchParams = await Promise.resolve(searchParams);
   const monitorId = resolvedParams.id;
+  const range = resolvedSearchParams?.range ?? "24h";
+  const userId = getSessionUserId();
 
-  const [monitor, incidents] = await Promise.all([
-    getMonitorById(monitorId),
-    getIncidentsByMonitorId(monitorId, 20),
-  ]);
+  if (!userId) {
+    notFound();
+  }
+
+  const monitor = await getMonitorById(monitorId, userId);
 
   if (!monitor) {
     notFound();
   }
+
+  const [incidents, history] = await Promise.all([
+    getIncidentsByMonitorId(monitorId, 20, userId),
+    getCheckHistoryByMonitorId(monitorId, range, userId),
+  ]);
+
+  const historyToLatencyLogs = history.map((entry) => ({
+    checkedAt: entry.timestamp,
+    success: entry.status === "up",
+    responseTimeMs: entry.latency,
+    statusCode: entry.statusCode,
+    errorMessage: entry.errorMessage,
+  }));
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 md:px-8">
@@ -37,7 +56,7 @@ export default async function MonitorDetailPage({ params }: MonitorDetailPagePro
         <div className="flex gap-2">
           <StatusBadge status={monitor.status} />
           <Link
-            href="/"
+            href="/dashboard"
             className="rounded-md border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:text-sky-300"
           >
             Dashboard
@@ -73,8 +92,15 @@ export default async function MonitorDetailPage({ params }: MonitorDetailPagePro
       </section>
 
       <section className="mb-6 space-y-3">
-        <h2 className="text-lg font-semibold text-slate-100">Latency History</h2>
-        <LatencyChart data={monitor.latencyLogs} />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-100">Latency History ({range})</h2>
+          <div className="flex items-center gap-2 text-xs">
+            <Link href={`/monitors/${monitor.id}?range=24h`} className="btn-soft">24h</Link>
+            <Link href={`/monitors/${monitor.id}?range=7d`} className="btn-soft">7d</Link>
+            <Link href={`/monitors/${monitor.id}?range=30d`} className="btn-soft">30d</Link>
+          </div>
+        </div>
+        <LatencyChart data={historyToLatencyLogs} />
       </section>
 
       <section className="space-y-3">

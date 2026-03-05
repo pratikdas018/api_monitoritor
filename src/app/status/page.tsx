@@ -5,8 +5,10 @@ import {
   MonitorStatusTable,
   type PublicMonitorRow,
 } from "@/components/status/MonitorStatusTable";
+import { PublicLatencyChart } from "@/components/status/PublicLatencyChart";
+import { StatCard } from "@/components/StatCard";
 import { formatDateTime } from "@/lib/format";
-import { getIncidents, getStatusMonitors } from "@/lib/queries";
+import { getDashboardData, getIncidents, getStatusMonitors } from "@/lib/queries";
 import { calculateUptimePercentage } from "@/lib/uptime";
 
 export const revalidate = 60;
@@ -29,9 +31,10 @@ function averageLatency(
 }
 
 export default async function StatusPage() {
-  const [monitors, incidents] = await Promise.all([
+  const [monitors, incidents, dashboardData] = await Promise.all([
     getStatusMonitors(),
     getIncidents(30),
+    getDashboardData(),
   ]);
 
   const lastIncidentByMonitor = new Map<string, string>();
@@ -73,6 +76,10 @@ export default async function StatusPage() {
       .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ??
     new Date().toISOString();
 
+  const allOperational =
+    monitorRows.length > 0 &&
+    monitorRows.every((row) => row.status === "up" || row.status === "paused");
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-[1300px] px-4 py-6 sm:px-6 md:px-8 lg:px-10 xl:py-8">
       <header className="glass-panel mb-6 rounded-2xl p-5 md:p-6">
@@ -87,9 +94,33 @@ export default async function StatusPage() {
         </div>
       </header>
 
+      <section
+        className={`mb-6 rounded-2xl border px-4 py-3 ${
+          allOperational
+            ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
+            : "border-amber-400/40 bg-amber-500/10 text-amber-100"
+        }`}
+      >
+        <p className="text-sm font-semibold">
+          {allOperational ? "All Systems Operational" : "Partial Service Disruption"}
+        </p>
+      </section>
+
+      <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Services" value={dashboardData.stats.totalMonitors} />
+        <StatCard label="Healthy" value={dashboardData.stats.upMonitors} tone="good" />
+        <StatCard label="Down" value={dashboardData.stats.downMonitors} tone="bad" />
+        <StatCard label="Avg Latency" value={`${dashboardData.stats.avgLatencyMs} ms`} tone="info" />
+      </section>
+
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Monitors</h2>
         <MonitorStatusTable rows={monitorRows} />
+      </section>
+
+      <section className="mt-6 space-y-3">
+        <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Latency</h2>
+        <PublicLatencyChart data={dashboardData.metrics.responseTrend} />
       </section>
 
       <section className="mt-6 space-y-3 pb-4">

@@ -2,6 +2,9 @@ import Link from "next/link";
 
 export function AppFooter() {
   const year = new Date().getFullYear();
+  const githubUrl =
+    process.env.NEXT_PUBLIC_GITHUB_URL ??
+    "https://github.com/pratikdas018/api_monitoritor";
 
   return (
     <footer className="border-t border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
@@ -15,6 +18,12 @@ export function AppFooter() {
 
         <nav aria-label="Footer navigation" className="flex flex-wrap gap-2">
           <Link href="/" className="btn-soft">
+            Home
+          </Link>
+          <Link href="/login" className="btn-soft">
+            Login
+          </Link>
+          <Link href="/dashboard" className="btn-soft">
             Dashboard
           </Link>
           <Link href="/status" className="btn-soft">
@@ -23,10 +32,13 @@ export function AppFooter() {
           <Link href="/incidents" className="btn-soft">
             Incidents
           </Link>
+          <a href={githubUrl} target="_blank" rel="noreferrer" className="btn-soft">
+            GitHub
+          </a>
         </nav>
 
         <div className="text-xs text-slate-500">
-          <p>© {year} API Monitor Platform. All rights reserved.</p>
+          <p>Copyright {year} API Monitor Platform. All rights reserved.</p>
           <p>Developed by pratik.</p>
         </div>
       </div>

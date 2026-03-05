@@ -3,10 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 
+import { createAlertChannel } from "@/lib/alertChannels";
+import { connectToDatabase } from "@/lib/db";
 import { createMonitorRecord, resolveIncidentByOperator, toggleMonitorPause } from "@/lib/monitorMutations";
+import { createProject } from "@/lib/projects";
 import { runMonitorCheck } from "@/lib/monitoring";
 import { enqueueMonitorCheck } from "@/lib/queue";
-import { createMonitorSchema } from "@/lib/validators";
+import { getSessionUserId } from "@/lib/serverSession";
+import {
+  createAlertChannelSchema,
+  createMonitorSchema,
+  createProjectSchema,
+} from "@/lib/validators";
+import Monitor from "@/models/Monitor";
 
 type MonitorActionState = {
   status: "idle" | "success" | "error";
@@ -17,7 +26,7 @@ const ENQUEUE_TIMEOUT_MS = Number(process.env.MONITOR_ENQUEUE_TIMEOUT_MS ?? "450
 const CREATE_INLINE_CHECK_TIMEOUT_MS = Number(process.env.MONITOR_CREATE_INLINE_TIMEOUT_MS ?? "2500");
 
 function revalidateMonitoringPages() {
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/status");
   revalidatePath("/incidents");
 }
@@ -72,7 +81,16 @@ export async function createMonitorAction(
   _prevState: MonitorActionState,
   formData: FormData,
 ): Promise<MonitorActionState> {
+  const userId = getSessionUserId();
+  if (!userId) {
+    return {
+      status: "error",
+      message: "Please login again to continue.",
+    };
+  }
+
   const parsed = createMonitorSchema.safeParse({
+    projectId: formData.get("projectId"),
     name: formData.get("name"),
     url: formData.get("url"),
     intervalMinutes: formData.get("intervalMinutes"),
@@ -89,7 +107,7 @@ export async function createMonitorAction(
   let monitorId: string;
 
   try {
-    const monitor = await createMonitorRecord(parsed.data);
+    const monitor = await createMonitorRecord({ ...parsed.data, userId });
     monitorId = monitor.id;
   } catch (error) {
     console.error("[action] createMonitorAction failed", error);
@@ -124,9 +142,98 @@ export async function createMonitorAction(
   }
 }
 
-export async function toggleMonitorStatusAction(monitorId: string) {
+export async function createProjectAction(
+  _prevState: MonitorActionState,
+  formData: FormData,
+): Promise<MonitorActionState> {
+  const userId = getSessionUserId();
+  if (!userId) {
+    return {
+      status: "error" as const,
+      message: "Please login again to continue.",
+    };
+  }
+
+  const parsed = createProjectSchema.safeParse({
+    name: formData.get("name"),
+    description: formData.get("description"),
+  });
+
+  if (!parsed.success) {
+    return {
+      status: "error" as const,
+      message: parsed.error.issues[0]?.message ?? "Invalid project input",
+    };
+  }
+
   try {
-    const monitor = await toggleMonitorPause(monitorId);
+    await createProject(parsed.data, userId);
+    revalidateMonitoringPages();
+    return {
+      status: "success" as const,
+      message: "Project created.",
+    };
+  } catch (error) {
+    console.error("[action] createProjectAction failed", error);
+    return {
+      status: "error" as const,
+      message: "Failed to create project",
+    };
+  }
+}
+
+export async function createAlertChannelAction(
+  _prevState: MonitorActionState,
+  formData: FormData,
+): Promise<MonitorActionState> {
+  const userId = getSessionUserId();
+  if (!userId) {
+    return {
+      status: "error" as const,
+      message: "Please login again to continue.",
+    };
+  }
+
+  const parsed = createAlertChannelSchema.safeParse({
+    projectId: formData.get("projectId"),
+    type: formData.get("type"),
+    name: formData.get("name"),
+    target: formData.get("target"),
+    secondaryTarget: formData.get("secondaryTarget"),
+    onDown: formData.get("onDown"),
+    onRecovery: formData.get("onRecovery"),
+    onHighLatency: formData.get("onHighLatency"),
+  });
+
+  if (!parsed.success) {
+    return {
+      status: "error" as const,
+      message: parsed.error.issues[0]?.message ?? "Invalid alert channel",
+    };
+  }
+
+  try {
+    await createAlertChannel({ ...parsed.data, userId });
+    revalidateMonitoringPages();
+    return {
+      status: "success" as const,
+      message: "Alert channel added.",
+    };
+  } catch (error) {
+    console.error("[action] createAlertChannelAction failed", error);
+    return {
+      status: "error" as const,
+      message: "Failed to create alert channel",
+    };
+  }
+}
+
+export async function toggleMonitorStatusAction(monitorId: string) {
+  const userId = getSessionUserId();
+  if (!userId) return;
+
+  try {
+    const monitor = await toggleMonitorPause(monitorId, userId);
     if (!monitor) return;
 
     if (monitor.status !== "paused") {
@@ -143,8 +250,17 @@ export async function runMonitorNowAction(monitorId: string) {
   if (!Types.ObjectId.isValid(monitorId)) {
     return;
   }
+  const userId = getSessionUserId();
+  if (!userId) return;
 
   try {
+    await connectToDatabase();
+    const monitor = await Monitor.findOne({ _id: monitorId, userId })
+      .select("_id status")
+      .lean();
+    if (!monitor) return;
+    if (monitor.status === "paused") return;
+
     await enqueueCheckWithInlineFallback(monitorId, "manual");
     revalidateMonitoringPages();
   } catch (error) {
@@ -153,8 +269,11 @@ export async function runMonitorNowAction(monitorId: string) {
 }
 
 export async function resolveIncidentAction(incidentId: string) {
+  const userId = getSessionUserId();
+  if (!userId) return;
+
   try {
-    await resolveIncidentByOperator(incidentId);
+    await resolveIncidentByOperator(incidentId, userId);
     revalidateMonitoringPages();
   } catch (error) {
     console.error("[action] resolveIncidentAction failed", error);

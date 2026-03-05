@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 
 import { getStatusMonitors } from "@/lib/queries";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const monitors = await getStatusMonitors();
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get("projectId");
+    const monitors = await getStatusMonitors(projectId);
     const summary = {
       total: monitors.length,
       up: monitors.filter((monitor) => monitor.status === "up").length,

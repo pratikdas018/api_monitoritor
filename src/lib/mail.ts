@@ -11,6 +11,15 @@ type MonitorAlertPayload = {
   errorMessage?: string | null;
 };
 
+type HighLatencyPayload = {
+  to?: string[];
+  monitorName: string;
+  monitorUrl: string;
+  checkedAt: Date;
+  responseTimeMs: number;
+  statusCode: number | null;
+};
+
 let hasShownMailConfigWarning = false;
 
 function getRecipients(overrideRecipients?: string[]) {
@@ -148,6 +157,37 @@ export async function sendMonitorRecoveredEmail(payload: MonitorAlertPayload) {
       ${
         incidentLink
           ? `<p><a href="${incidentLink}">Open Incident Timeline</a></p>`
+          : ""
+      }
+    `,
+  });
+}
+
+export async function sendMonitorHighLatencyEmail(payload: HighLatencyPayload) {
+  const to = getRecipients(payload.to);
+  const dashboardLink = `${process.env.APP_URL ?? ""}/`;
+
+  return sendMail({
+    to,
+    subject: `HIGH LATENCY: ${payload.monitorName} responded slowly`,
+    text: [
+      `Monitor: ${payload.monitorName}`,
+      `URL: ${payload.monitorUrl}`,
+      `Checked At: ${payload.checkedAt.toISOString()}`,
+      `Latency: ${payload.responseTimeMs} ms`,
+      `Status Code: ${payload.statusCode ?? "N/A"}`,
+      `Dashboard: ${dashboardLink || "Not configured"}`,
+    ].join("\n"),
+    html: `
+      <h2>High Latency Detected</h2>
+      <p><strong>Monitor:</strong> ${payload.monitorName}</p>
+      <p><strong>URL:</strong> ${payload.monitorUrl}</p>
+      <p><strong>Checked At:</strong> ${payload.checkedAt.toISOString()}</p>
+      <p><strong>Latency:</strong> ${payload.responseTimeMs} ms</p>
+      <p><strong>Status Code:</strong> ${payload.statusCode ?? "N/A"}</p>
+      ${
+        dashboardLink
+          ? `<p><a href="${dashboardLink}">Open Dashboard</a></p>`
           : ""
       }
     `,

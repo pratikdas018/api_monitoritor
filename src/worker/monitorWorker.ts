@@ -4,6 +4,7 @@ import "../lib/loadEnv";
 import { runMonitorCheck } from "../lib/monitoring";
 import { MONITOR_JOB_NAME, MONITOR_QUEUE_NAME } from "../lib/queue";
 import { createRedisConnection } from "../lib/redis";
+import type { MonitorRegion } from "../models/Monitor";
 
 const concurrency = Number(process.env.MONITOR_WORKER_CONCURRENCY ?? "5");
 const redisRetryDelayMs = 5_000;
@@ -11,6 +12,8 @@ const redisRetryDelayMs = 5_000;
 type MonitorJobData = {
   monitorId: string;
   reason: "create" | "manual" | "scheduler";
+  region: MonitorRegion;
+  retryAttempt?: number;
 };
 
 function sleep(ms: number) {
@@ -42,7 +45,11 @@ async function processMonitorJob(job: Job<MonitorJobData>) {
     return;
   }
 
-  await runMonitorCheck(job.data.monitorId);
+  await runMonitorCheck(job.data.monitorId, {
+    reason: job.data.reason,
+    region: job.data.region,
+    retryAttempt: job.data.retryAttempt ?? 0,
+  });
 }
 
 async function startWorker() {
@@ -60,7 +67,9 @@ async function startWorker() {
   });
 
   worker.on("completed", (job) => {
-    console.log(`[worker] completed job ${job.id} for monitor ${job.data.monitorId}`);
+    console.log(
+      `[worker] completed job ${job.id} for monitor ${job.data.monitorId} (${job.data.region})`,
+    );
   });
 
   worker.on("failed", (job, error) => {

@@ -1,10 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { IncidentTimeline } from "@/components/IncidentTimeline";
 import { getIncidents } from "@/lib/queries";
+import { getSessionUserId } from "@/lib/serverSession";
 
 export default async function IncidentsPage() {
-  const incidents = await getIncidents(200);
+  const userId = getSessionUserId();
+  if (!userId) {
+    redirect("/login?next=/incidents");
+  }
+
+  const incidents = await getIncidents(200, userId);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 md:px-8">
@@ -16,7 +23,7 @@ export default async function IncidentsPage() {
           </h1>
         </div>
         <Link
-          href="/"
+          href="/dashboard"
           className="rounded-md border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:text-sky-300"
         >
           Back to Dashboard

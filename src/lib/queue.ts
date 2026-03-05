@@ -1,6 +1,8 @@
 import { JobsOptions, Queue, QueueEvents } from "bullmq";
 
+import { getMonitoringRegions } from "@/lib/regions";
 import { createRedisConnection } from "@/lib/redis";
+import type { MonitorRegion } from "@/models/Monitor";
 
 export const MONITOR_QUEUE_NAME = "monitor-health-checks";
 export const MONITOR_JOB_NAME = "execute-monitor-check";
@@ -9,7 +11,7 @@ const defaultJobOptions: JobsOptions = {
   attempts: 3,
   backoff: {
     type: "exponential",
-    delay: 3_000,
+    delay: 10_000,
   },
   removeOnComplete: 1_000,
   removeOnFail: 5_000,
@@ -43,12 +45,41 @@ export function getQueueEvents() {
 export async function enqueueMonitorCheck(
   monitorId: string,
   reason: "create" | "manual" | "scheduler" = "scheduler",
+  options?: {
+    region?: MonitorRegion;
+    retryAttempt?: number;
+    delayMs?: number;
+  },
 ) {
-  return getQueue().add(
-    MONITOR_JOB_NAME,
-    { monitorId, reason },
-    {
-      jobId: `${monitorId}:${reason}:${Date.now()}`,
-    },
+  const queue = getQueue();
+  const retryAttempt = options?.retryAttempt ?? 0;
+  const delayMs = options?.delayMs ?? 0;
+  const createJobId = (region: MonitorRegion) =>
+    [monitorId, region, reason, retryAttempt, Date.now()].join("__");
+
+  if (options?.region) {
+    await queue.add(
+      MONITOR_JOB_NAME,
+      { monitorId, reason, region: options.region, retryAttempt },
+      {
+        delay: delayMs,
+        jobId: createJobId(options.region),
+      },
+    );
+    return;
+  }
+
+  const regions = getMonitoringRegions();
+  await Promise.all(
+    regions.map((region) =>
+      queue.add(
+        MONITOR_JOB_NAME,
+        { monitorId, reason, region, retryAttempt },
+        {
+          delay: delayMs,
+          jobId: createJobId(region),
+        },
+      ),
+    ),
   );
 }

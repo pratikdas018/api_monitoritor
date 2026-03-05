@@ -4,8 +4,14 @@ import { useFormState } from "react-dom";
 
 import { createMonitorAction } from "@/app/actions/monitorActions";
 import { SubmitButton } from "@/components/SubmitButton";
+import type { ProjectView } from "@/lib/queries";
 
-export function MonitorCreateForm() {
+type MonitorCreateFormProps = {
+  projects: ProjectView[];
+  activeProjectId: string | null;
+};
+
+export function MonitorCreateForm({ projects, activeProjectId }: MonitorCreateFormProps) {
   const initialMonitorActionState = { status: "idle", message: "" } as const;
   const [state, formAction] = useFormState(createMonitorAction, initialMonitorActionState);
 
@@ -25,6 +31,17 @@ export function MonitorCreateForm() {
       </p>
 
       <form action={formAction} className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <select
+          name="projectId"
+          defaultValue={activeProjectId ?? projects[0]?.id ?? ""}
+          className="rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
+        >
+          {projects.map((project) => (
+            <option key={project.id} value={project.id}>
+              {project.name}
+            </option>
+          ))}
+        </select>
         <input
           name="name"
           placeholder="Name (optional)"

@@ -13,6 +13,7 @@ export type IncidentEvent = {
 
 export interface IIncident extends Document {
   monitorId: Types.ObjectId;
+  projectId: Types.ObjectId | null;
   message: string;
   monitorName: string;
   monitorUrl: string;
@@ -52,6 +53,12 @@ const incidentSchema = new Schema<IIncident>(
       type: Schema.Types.ObjectId,
       ref: "Monitor",
       required: true,
+      index: true,
+    },
+    projectId: {
+      type: Schema.Types.ObjectId,
+      ref: "Project",
+      default: null,
       index: true,
     },
     message: { type: String, required: true },

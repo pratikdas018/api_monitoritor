@@ -6,7 +6,9 @@ Production-ready API monitoring and incident response platform built with Next.j
 
 This platform monitors API endpoints on a schedule, records uptime and latency, creates incidents on failure, auto-resolves incidents on recovery, and exposes both:
 
-- Internal dashboard (`/`)
+- Public landing page (`/`)
+- Login page (`/login`)
+- Internal dashboard (`/dashboard`)
 - Public status page (`/status`)
 
 ## Tech Stack
@@ -38,7 +40,11 @@ src/
   jobs/
     monitorJob.ts
   lib/
+    alerts.ts
+    alertChannels.ts
     db.ts
+    projects.ts
+    regions.ts
     redis.ts
     queue.ts
     mail.ts
@@ -46,8 +52,11 @@ src/
     queries.ts
     uptime.ts
   models/
+    AlertChannel.ts
+    CheckHistory.ts
     Monitor.ts
     Incident.ts
+    Project.ts
   worker/
     monitorWorker.ts
 ```
@@ -55,19 +64,24 @@ src/
 ## Features
 
 - Monitor creation with interval selection (1/5/10 min)
+- Project/workspace grouping for monitors
 - Async checks via BullMQ worker
 - Scheduler-based dispatch via Node Cron
-- Uptime and latency tracking
+- Multi-region checks (India/US/Europe)
+- Retry strategy (10s -> 30s -> incident creation)
+- Uptime, latency, and check-history tracking
 - Incident lifecycle:
   - create `OPEN` on failure
   - retry updates while still failing
   - auto-resolve to `RESOLVED` on recovery
-- Email alerts for DOWN and RECOVERED states
+- Alert channels: Email, Slack webhook, Discord webhook, Telegram bot
+- High latency alerting
 - SLA badges per monitor:
   - 99%
   - 99.9%
   - 99.99%
-- Public status page with monitor health and recent incident history
+- Performance metrics: avg latency, P95 latency, error rate, status-code distribution
+- Public status page with operational banner, service list, incident history, and latency trend
 - Responsive SaaS-style UI + global footer
 
 ## Environment Variables
@@ -87,8 +101,10 @@ REDIS_URL=redis://127.0.0.1:6379
 DEFAULT_MONITOR_TIMEOUT_MS=10000
 MONITOR_SCHEDULER_CRON=*/1 * * * *
 MONITOR_WORKER_CONCURRENCY=5
+MONITOR_REGIONS=India,US,Europe
 MONITOR_ENQUEUE_TIMEOUT_MS=4500
 MONITOR_CREATE_INLINE_TIMEOUT_MS=2500
+MONITOR_HIGH_LATENCY_MS=2000
 DISPLAY_TIMEZONE=Asia/Kolkata
 
 SMTP_HOST=smtp.gmail.com
@@ -100,6 +116,8 @@ SMTP_FROM=<email>
 ALERT_EMAIL_TO=<comma-separated-emails>
 
 APP_URL=http://localhost:3000
+APP_LOGIN_EMAIL=admin@apimonitor.local
+APP_LOGIN_PASSWORD=admin123
 ```
 
 Production note:
@@ -141,10 +159,16 @@ This starts:
 - `POST /api/monitors`
 - `GET /api/incidents`
 - `GET /api/status`
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/history`
 
 ## Pages
 
 - `/` - internal monitoring dashboard
+- `/` - public landing page
+- `/login` - login page
+- `/dashboard` - internal monitoring dashboard (protected)
 - `/incidents` - incident timeline
 - `/monitors/[id]` - monitor details + latency + incidents
 - `/status` - public status page (no auth)
