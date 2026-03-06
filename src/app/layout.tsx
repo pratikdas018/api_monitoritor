@@ -20,6 +20,11 @@ export const metadata: Metadata = {
   title: "API Monitor Platform",
   description:
     "Production-grade API monitoring and incident response platform built with Next.js 14.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
