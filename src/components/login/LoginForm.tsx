@@ -21,7 +21,7 @@ export function LoginForm({ nextPath }: LoginFormProps) {
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="next" value={nextPath} />
       <div className="space-y-2">
-        <label htmlFor="email" className="text-sm text-slate-300">
+        <label htmlFor="email" className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
           Email
         </label>
         <input
@@ -30,12 +30,12 @@ export function LoginForm({ nextPath }: LoginFormProps) {
           type="email"
           required
           placeholder="admin@apimonitor.local"
-          className="w-full rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
+          className="w-full rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-3 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="text-sm text-slate-300">
+        <label htmlFor="password" className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
           Password
         </label>
         <input
@@ -44,13 +44,15 @@ export function LoginForm({ nextPath }: LoginFormProps) {
           type="password"
           required
           placeholder="********"
-          className="w-full rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
+          className="w-full rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-3 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
         />
       </div>
 
-      <SubmitButton label="Login" pendingLabel="Signing in..." />
+      <SubmitButton label="Login" pendingLabel="Signing in..." className="w-full" />
       {state.status === "error" ? (
-        <p className="text-sm text-rose-400">{state.message}</p>
+        <p className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+          {state.message}
+        </p>
       ) : null}
     </form>
   );

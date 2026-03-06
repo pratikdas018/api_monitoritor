@@ -14,6 +14,7 @@ type MonitorCreateFormProps = {
 export function MonitorCreateForm({ projects, activeProjectId }: MonitorCreateFormProps) {
   const initialMonitorActionState = { status: "idle", message: "" } as const;
   const [state, formAction] = useFormState(createMonitorAction, initialMonitorActionState);
+  const hasProjects = projects.length > 0;
 
   return (
     <section className="glass-panel rounded-2xl p-5 md:p-6">
@@ -31,17 +32,23 @@ export function MonitorCreateForm({ projects, activeProjectId }: MonitorCreateFo
       </p>
 
       <form action={formAction} className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <select
-          name="projectId"
-          defaultValue={activeProjectId ?? projects[0]?.id ?? ""}
-          className="rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
-        >
-          {projects.map((project) => (
-            <option key={project.id} value={project.id}>
-              {project.name}
-            </option>
-          ))}
-        </select>
+        {hasProjects ? (
+          <select
+            name="projectId"
+            defaultValue={activeProjectId ?? projects[0]?.id ?? ""}
+            className="rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-2.5 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
+          >
+            {projects.map((project) => (
+              <option key={project.id} value={project.id}>
+                {project.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-700/80 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-400">
+            No project yet. Create one first.
+          </div>
+        )}
         <input
           name="name"
           placeholder="Name (optional)"
@@ -78,7 +85,11 @@ export function MonitorCreateForm({ projects, activeProjectId }: MonitorCreateFo
           >
             {state.message || "Checks run in the background worker queue."}
           </p>
-          <SubmitButton label="Add Monitor" pendingLabel="Creating..." />
+          <SubmitButton
+            label="Add Monitor"
+            pendingLabel="Creating..."
+            disabled={!hasProjects}
+          />
         </div>
       </form>
     </section>

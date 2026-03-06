@@ -56,7 +56,7 @@ export function GoogleAuthPanel({ nextPath }: GoogleAuthPanelProps) {
             type="button"
             onClick={handleLogout}
             disabled={loading}
-            className="rounded-xl border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-rose-400 hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl border border-slate-600 px-4 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-rose-400 hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "Please wait..." : "Logout"}
           </button>
@@ -66,13 +66,20 @@ export function GoogleAuthPanel({ nextPath }: GoogleAuthPanelProps) {
           type="button"
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="group flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300/70 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] text-slate-700 transition group-hover:border-slate-400">
+            G
+          </span>
           {loading ? "Signing in..." : "Sign in with Google"}
         </button>
       )}
 
-      {error ? <p className="text-sm text-rose-400">{error}</p> : null}
+      {error ? (
+        <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

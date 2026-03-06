@@ -7,7 +7,7 @@ export function AppFooter() {
     "https://github.com/pratikdas018/api_monitoritor";
 
   return (
-    <footer className="border-t border-slate-800/80 bg-slate-950/70 backdrop-blur-xl">
+    <footer className="border-t border-slate-800/80 bg-[linear-gradient(180deg,rgba(2,6,23,0.6),rgba(2,6,23,0.95))] backdrop-blur-xl">
       <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-4 px-4 py-6 sm:px-6 md:px-8 lg:flex-row lg:items-center lg:justify-between lg:px-10">
         <div>
           <p className="text-sm font-semibold text-slate-100">API Monitor Platform</p>

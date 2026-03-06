@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 
 import { createAlertChannel } from "@/lib/alertChannels";
-import { connectToDatabase } from "@/lib/db";
+import { connectToDatabase, hasMongoConfig } from "@/lib/db";
 import { createMonitorRecord, resolveIncidentByOperator, toggleMonitorPause } from "@/lib/monitorMutations";
 import { createProject } from "@/lib/projects";
 import { runMonitorCheck } from "@/lib/monitoring";
@@ -24,6 +24,34 @@ type MonitorActionState = {
 
 const ENQUEUE_TIMEOUT_MS = Number(process.env.MONITOR_ENQUEUE_TIMEOUT_MS ?? "4500");
 const CREATE_INLINE_CHECK_TIMEOUT_MS = Number(process.env.MONITOR_CREATE_INLINE_TIMEOUT_MS ?? "2500");
+
+function isDuplicateKeyError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: number }).code === 11000
+  );
+}
+
+function isMongoNetworkError(error: unknown) {
+  const text =
+    error instanceof Error
+      ? `${error.name} ${error.message}`
+      : typeof error === "string"
+        ? error
+        : "";
+
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("mongodbur") ||
+    normalized.includes("mongoose server selection error") ||
+    normalized.includes("serverselectionerror") ||
+    normalized.includes("replicasetnoprimary") ||
+    normalized.includes("whitelist") ||
+    normalized.includes("network access")
+  );
+}
 
 function revalidateMonitoringPages() {
   revalidatePath("/dashboard");
@@ -146,6 +174,13 @@ export async function createProjectAction(
   _prevState: MonitorActionState,
   formData: FormData,
 ): Promise<MonitorActionState> {
+  if (!hasMongoConfig()) {
+    return {
+      status: "error" as const,
+      message: "Database is not configured. Set MONGODB_URI in .env.local.",
+    };
+  }
+
   const userId = getSessionUserId();
   if (!userId) {
     return {
@@ -175,9 +210,24 @@ export async function createProjectAction(
     };
   } catch (error) {
     console.error("[action] createProjectAction failed", error);
+    if (isMongoNetworkError(error)) {
+      return {
+        status: "error" as const,
+        message:
+          "Database connection failed. In MongoDB Atlas, allow your current IP in Network Access.",
+      };
+    }
+
+    if (isDuplicateKeyError(error)) {
+      return {
+        status: "error" as const,
+        message: "Project name already exists. Try a different name.",
+      };
+    }
+
     return {
       status: "error" as const,
-      message: "Failed to create project",
+      message: "Failed to create project. Please try again.",
     };
   }
 }
