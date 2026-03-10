@@ -1,7 +1,30 @@
 export default function Loading() {
   return (
     <main className="mx-auto flex min-h-[60vh] w-full max-w-6xl items-center justify-center px-4 py-10">
-      <div className="glass-panel rounded-2xl px-5 py-3 text-sm text-slate-300">Loading...</div>
+      <div className="glass-panel relative w-full max-w-sm overflow-hidden rounded-2xl px-6 py-5">
+        <div className="pointer-events-none absolute inset-0 opacity-60">
+          <div className="absolute -left-1/2 top-0 h-full w-[200%] loading-shimmer" />
+        </div>
+
+        <div className="relative flex items-center gap-4">
+          <div
+            className="h-10 w-10 animate-spin rounded-full border-2 border-slate-600/70 border-t-sky-300/90"
+            aria-hidden="true"
+          />
+
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-100">Loading</p>
+            <p className="mt-1 flex items-center gap-1 text-xs text-slate-400" aria-live="polite">
+              Fetching latest data
+              <span className="inline-flex w-6 items-end justify-start" aria-hidden="true">
+                <span className="loading-dot">.</span>
+                <span className="loading-dot delay-150">.</span>
+                <span className="loading-dot delay-300">.</span>
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

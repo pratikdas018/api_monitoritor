@@ -35,10 +35,49 @@ body {
   .skeleton {
     @apply animate-pulse rounded-xl bg-slate-800/70;
   }
+
+  .skeleton-shimmer {
+    @apply rounded-xl bg-gradient-to-r from-slate-900/70 via-slate-700/50 to-slate-900/70;
+    background-size: 200% 100%;
+    animation: loadingShimmer 1.2s ease-in-out infinite;
+  }
+
+  .loading-shimmer {
+    @apply bg-gradient-to-r from-transparent via-sky-500/10 to-transparent;
+    transform: translateX(-35%);
+    animation: loadingSweep 1.15s ease-in-out infinite;
+  }
+
+  .loading-dot {
+    @apply translate-y-[1px] animate-bounce text-slate-400;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+@keyframes loadingShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes loadingSweep {
+  0% {
+    transform: translateX(-35%);
+    opacity: 0.25;
+  }
+  45% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(35%);
+    opacity: 0.25;
   }
 }

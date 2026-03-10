@@ -10,6 +10,7 @@ import type { MonitorRegion } from "@/models/Monitor";
 type AlertEventType = "down" | "recovery" | "high_latency";
 
 type AlertPayload = {
+  userId: string;
   eventType: AlertEventType;
   projectId?: string | null;
   monitorName: string;
@@ -21,6 +22,17 @@ type AlertPayload = {
   errorMessage?: string | null;
   incidentId?: string;
 };
+
+function looksLikeEmail(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length < 6 || trimmed.length > 254) return false;
+  // Pragmatic check: enough to avoid obviously-non-email userIds (e.g. Firebase UID).
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+function getFallbackRecipientsForUser(userId: string) {
+  return looksLikeEmail(userId) ? [userId.trim()] : undefined;
+}
 
 async function postJsonWebhook(url: string, body: Record<string, unknown>) {
   if (!url) return false;
@@ -138,6 +150,7 @@ export async function dispatchAlert(payload: AlertPayload) {
 
   const channels = await AlertChannel.find({
     enabled: true,
+    userId: payload.userId,
     $or: [{ projectId: payload.projectId ?? null }, { projectId: null }],
   })
     .select("type config events")
@@ -147,8 +160,20 @@ export async function dispatchAlert(payload: AlertPayload) {
     shouldSendForEvent(payload.eventType, channel.events),
   );
 
+  const fallbackRecipients = getFallbackRecipientsForUser(payload.userId);
+  const hasSendableEmailChannel = sendableChannels.some((channel) => channel.type === "email");
+
+  // Always send an email to the owning user when we can infer their mailbox,
+  // unless they explicitly configured an email channel for this event.
+  if (fallbackRecipients && !hasSendableEmailChannel) {
+    await sendEmailAlert(fallbackRecipients, payload);
+  }
+
   if (sendableChannels.length === 0) {
-    await sendEmailAlert(undefined, payload);
+    // If we couldn't infer a user mailbox, fall back to env recipients for dev/demo.
+    if (!fallbackRecipients) {
+      await sendEmailAlert(undefined, payload);
+    }
     return;
   }
 

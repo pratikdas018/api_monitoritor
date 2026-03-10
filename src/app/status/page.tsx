@@ -9,6 +9,7 @@ import { PublicLatencyChart } from "@/components/status/PublicLatencyChart";
 import { StatCard } from "@/components/StatCard";
 import { formatDateTime } from "@/lib/format";
 import { getDashboardData, getIncidents, getStatusMonitors } from "@/lib/queries";
+import { getSessionUserId } from "@/lib/serverSession";
 import { calculateUptimePercentage } from "@/lib/uptime";
 
 export const revalidate = 60;
@@ -31,10 +32,11 @@ function averageLatency(
 }
 
 export default async function StatusPage() {
+  const userId = getSessionUserId();
   const [monitors, incidents, dashboardData] = await Promise.all([
-    getStatusMonitors(),
-    getIncidents(30),
-    getDashboardData(),
+    getStatusMonitors(undefined, userId),
+    getIncidents(30, userId),
+    getDashboardData(userId),
   ]);
 
   const lastIncidentByMonitor = new Map<string, string>();
@@ -89,7 +91,8 @@ export default async function StatusPage() {
             API Health Status
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            No authentication required. Last checked at {formatDateTime(generatedAt)}.
+            {userId ? `Showing monitors for ${userId}.` : "No authentication required."} Last checked at{" "}
+            {formatDateTime(generatedAt)}.
           </p>
         </div>
       </header>

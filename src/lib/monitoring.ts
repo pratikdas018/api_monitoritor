@@ -129,6 +129,7 @@ function aggregateMonitorStatus(states: RegionCheckState[]): MonitorStatus {
 }
 
 async function createIncident(params: {
+  userId: string;
   monitorId: Types.ObjectId;
   projectId: Types.ObjectId | null;
   monitorName: string;
@@ -165,6 +166,7 @@ async function createIncident(params: {
     });
 
     await dispatchAlert({
+      userId: params.userId,
       eventType: "down",
       projectId: params.projectId ? String(params.projectId) : null,
       monitorName: params.monitorName,
@@ -220,6 +222,7 @@ async function appendIncidentFailure(params: {
 }
 
 async function resolveIncident(params: {
+  userId: string;
   monitorId: Types.ObjectId;
   projectId: Types.ObjectId | null;
   monitorName: string;
@@ -261,6 +264,7 @@ async function resolveIncident(params: {
   );
 
   await dispatchAlert({
+    userId: params.userId,
     eventType: "recovery",
     projectId: params.projectId ? String(params.projectId) : null,
     monitorName: params.monitorName,
@@ -406,6 +410,7 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     }
 
     await createIncident({
+      userId: monitor.userId,
       monitorId: monitor._id,
       projectId: monitor.projectId ?? null,
       monitorName: monitor.name,
@@ -426,6 +431,7 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
 
   if (openIncidentDoc) {
     await resolveIncident({
+      userId: monitor.userId,
       monitorId: monitor._id,
       projectId: monitor.projectId ?? null,
       monitorName: monitor.name,
@@ -442,6 +448,7 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     result.responseTimeMs > HIGH_LATENCY_THRESHOLD_MS
   ) {
     await dispatchAlert({
+      userId: monitor.userId,
       eventType: "high_latency",
       projectId: monitor.projectId ? String(monitor.projectId) : null,
       monitorName: monitor.name,

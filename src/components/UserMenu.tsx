@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
 
 type UserMenuProps = {
   userId: string;
+};
+
+type FirebaseProfile = {
+  photoUrl: string;
+  email: string;
+  name: string;
 };
 
 function getInitials(userId: string) {
@@ -25,7 +31,33 @@ export function UserMenu({ userId }: UserMenuProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const initials = useMemo(() => getInitials(userId), [userId]);
+  const [profile, setProfile] = useState<FirebaseProfile | null>(null);
+
+  const label = profile?.email || profile?.name || userId;
+  const initials = useMemo(() => getInitials(label), [label]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        if (!user) {
+          setProfile(null);
+          return;
+        }
+
+        setProfile({
+          photoUrl: user.photoURL ?? "",
+          email: user.email ?? "",
+          name: user.displayName ?? "",
+        });
+      },
+      () => {
+        setProfile(null);
+      },
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     function onClickOutside(event: MouseEvent) {
@@ -61,11 +93,21 @@ export function UserMenu({ userId }: UserMenuProps) {
         aria-expanded={open}
         aria-label="Open user menu"
       >
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-sky-400/40 bg-sky-500/15 text-xs font-semibold text-sky-200">
-          {initials}
+        <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-sky-400/40 bg-sky-500/15 text-xs font-semibold text-sky-200">
+          {profile?.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={profile.photoUrl}
+              alt={profile.name || profile.email || "User avatar"}
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            initials
+          )}
         </span>
         <span className="hidden max-w-[150px] truncate text-xs text-slate-300 sm:inline">
-          {userId}
+          {label}
         </span>
       </button>
 

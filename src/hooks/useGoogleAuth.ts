@@ -66,7 +66,8 @@ export function useGoogleAuth() {
         setUser(nextUser);
         if (nextUser) {
           setAppSessionCookie();
-          setUserIdCookie(nextUser.uid);
+          // Use email as the app userId when available so alerts can route to the user's mailbox.
+          setUserIdCookie(nextUser.email || nextUser.uid);
         } else {
           clearAppSessionCookie();
           clearUserIdCookie();
@@ -98,7 +99,7 @@ export function useGoogleAuth() {
       setUser(nextUser);
       setAppSessionCookie();
       if (nextUser) {
-        setUserIdCookie(nextUser.uid);
+        setUserIdCookie(nextUser.email || nextUser.uid);
       }
       return nextUser;
     } finally {

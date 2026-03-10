@@ -551,17 +551,22 @@ export async function getIncidents(
   }
 }
 
-export async function getStatusMonitors(projectId?: string | null) {
+export async function getStatusMonitors(projectId?: string | null, userId?: string | null) {
   if (!hasMongoConfig()) {
     return [] as MonitorView[];
   }
 
   try {
     await connectToDatabase();
-    const query: Record<string, unknown> = {};
-    if (projectId && Types.ObjectId.isValid(projectId)) {
-      query.projectId = projectId;
-    }
+    const query: Record<string, unknown> = userId
+      ? buildProjectFilter(userId, projectId)
+      : (() => {
+          const next: Record<string, unknown> = {};
+          if (projectId && Types.ObjectId.isValid(projectId)) {
+            next.projectId = projectId;
+          }
+          return next;
+        })();
     const monitorDocs = await Monitor.find(query).sort({ name: 1 }).lean<RawMonitorDoc[]>();
     return monitorDocs.map(serializeMonitor);
   } catch (error) {
