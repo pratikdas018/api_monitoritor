@@ -9,7 +9,7 @@ import { createMonitorRecord, resolveIncidentByOperator, toggleMonitorPause } fr
 import { createProject } from "@/lib/projects";
 import { runMonitorCheck } from "@/lib/monitoring";
 import { enqueueMonitorCheck } from "@/lib/queue";
-import { getSessionUserId } from "@/lib/serverSession";
+import { getSessionUserEmail, getSessionUserId } from "@/lib/serverSession";
 import {
   createAlertChannelSchema,
   createMonitorSchema,
@@ -110,6 +110,7 @@ export async function createMonitorAction(
   formData: FormData,
 ): Promise<MonitorActionState> {
   const userId = getSessionUserId();
+  const ownerEmail = getSessionUserEmail();
   if (!userId) {
     return {
       status: "error",
@@ -135,7 +136,7 @@ export async function createMonitorAction(
   let monitorId: string;
 
   try {
-    const monitor = await createMonitorRecord({ ...parsed.data, userId });
+    const monitor = await createMonitorRecord({ ...parsed.data, userId, ownerEmail });
     monitorId = monitor.id;
   } catch (error) {
     console.error("[action] createMonitorAction failed", error);

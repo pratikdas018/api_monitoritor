@@ -1,5 +1,6 @@
 export const SESSION_COOKIE_NAME = "apm_session";
 export const USER_ID_COOKIE_NAME = "apm_uid";
+export const USER_EMAIL_COOKIE_NAME = "apm_email";
 export const LOCAL_DEMO_USER_ID = "local-admin";
 
 export function getExpectedEmail() {

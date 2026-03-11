@@ -11,6 +11,7 @@ type AlertEventType = "down" | "recovery" | "high_latency";
 
 type AlertPayload = {
   userId: string;
+  userEmail?: string | null;
   eventType: AlertEventType;
   projectId?: string | null;
   monitorName: string;
@@ -32,6 +33,13 @@ function looksLikeEmail(value: string) {
 
 function getFallbackRecipientsForUser(userId: string) {
   return looksLikeEmail(userId) ? [userId.trim()] : undefined;
+}
+
+function getFallbackRecipients(payload: Pick<AlertPayload, "userId" | "userEmail">) {
+  if (payload.userEmail && looksLikeEmail(payload.userEmail)) {
+    return [payload.userEmail.trim().toLowerCase()];
+  }
+  return getFallbackRecipientsForUser(payload.userId);
 }
 
 async function postJsonWebhook(url: string, body: Record<string, unknown>) {
@@ -160,7 +168,7 @@ export async function dispatchAlert(payload: AlertPayload) {
     shouldSendForEvent(payload.eventType, channel.events),
   );
 
-  const fallbackRecipients = getFallbackRecipientsForUser(payload.userId);
+  const fallbackRecipients = getFallbackRecipients(payload);
   const hasSendableEmailChannel = sendableChannels.some((channel) => channel.type === "email");
 
   // Always send an email to the owning user when we can infer their mailbox,

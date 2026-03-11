@@ -11,7 +11,7 @@ import {
 } from "firebase/auth";
 
 import { auth, googleProvider } from "@/lib/firebase";
-import { SESSION_COOKIE_NAME, USER_ID_COOKIE_NAME } from "@/lib/auth";
+import { SESSION_COOKIE_NAME, USER_EMAIL_COOKIE_NAME, USER_ID_COOKIE_NAME } from "@/lib/auth";
 
 type AuthUser = {
   uid: string;
@@ -43,8 +43,17 @@ function setUserIdCookie(uid: string) {
   document.cookie = `${USER_ID_COOKIE_NAME}=${encodedUid}; path=/; max-age=604800; samesite=lax`;
 }
 
+function setUserEmailCookie(email: string) {
+  const encoded = encodeURIComponent(email);
+  document.cookie = `${USER_EMAIL_COOKIE_NAME}=${encoded}; path=/; max-age=604800; samesite=lax`;
+}
+
 function clearUserIdCookie() {
   document.cookie = `${USER_ID_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`;
+}
+
+function clearUserEmailCookie() {
+  document.cookie = `${USER_EMAIL_COOKIE_NAME}=; path=/; max-age=0; samesite=lax`;
 }
 
 export function useGoogleAuth() {
@@ -66,11 +75,14 @@ export function useGoogleAuth() {
         setUser(nextUser);
         if (nextUser) {
           setAppSessionCookie();
-          // Use email as the app userId when available so alerts can route to the user's mailbox.
-          setUserIdCookie(nextUser.email || nextUser.uid);
+          setUserIdCookie(nextUser.uid);
+          if (nextUser.email) {
+            setUserEmailCookie(nextUser.email);
+          }
         } else {
           clearAppSessionCookie();
           clearUserIdCookie();
+          clearUserEmailCookie();
         }
         setLoading(false);
       },
@@ -80,6 +92,7 @@ export function useGoogleAuth() {
         setUser(null);
         clearAppSessionCookie();
         clearUserIdCookie();
+        clearUserEmailCookie();
         setLoading(false);
       },
     );
@@ -99,7 +112,10 @@ export function useGoogleAuth() {
       setUser(nextUser);
       setAppSessionCookie();
       if (nextUser) {
-        setUserIdCookie(nextUser.email || nextUser.uid);
+        setUserIdCookie(nextUser.uid);
+        if (nextUser.email) {
+          setUserEmailCookie(nextUser.email);
+        }
       }
       return nextUser;
     } finally {
@@ -114,6 +130,7 @@ export function useGoogleAuth() {
       setUser(null);
       clearAppSessionCookie();
       clearUserIdCookie();
+      clearUserEmailCookie();
     } finally {
       setLoading(false);
     }

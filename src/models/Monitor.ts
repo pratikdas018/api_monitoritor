@@ -23,6 +23,7 @@ export type LatencyLog = {
 
 export interface IMonitor extends Document {
   userId: string;
+  ownerEmail: string | null;
   projectId: Types.ObjectId | null;
   name: string;
   url: string;
@@ -84,6 +85,12 @@ const monitorSchema = new Schema<IMonitor>(
       default: "legacy",
       index: true,
       trim: true,
+    },
+    ownerEmail: {
+      type: String,
+      default: null,
+      trim: true,
+      lowercase: true,
     },
     projectId: {
       type: Schema.Types.ObjectId,

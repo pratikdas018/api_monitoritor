@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { LOCAL_DEMO_USER_ID, SESSION_COOKIE_NAME, USER_ID_COOKIE_NAME, isValidLogin, normalizeUserId } from "@/lib/auth";
+import { LOCAL_DEMO_USER_ID, SESSION_COOKIE_NAME, USER_EMAIL_COOKIE_NAME, USER_ID_COOKIE_NAME, isValidLogin, normalizeUserId } from "@/lib/auth";
 
 export type LoginState = {
   status: "idle" | "error";
@@ -33,6 +33,13 @@ export async function loginAction(
     maxAge: 60 * 60 * 24 * 7,
   });
   cookies().set(USER_ID_COOKIE_NAME, normalizeUserId(email) || LOCAL_DEMO_USER_ID, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+  cookies().set(USER_EMAIL_COOKIE_NAME, normalizeUserId(email) || "", {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

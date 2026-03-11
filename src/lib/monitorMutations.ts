@@ -8,6 +8,7 @@ import Project from "@/models/Project";
 
 type CreateMonitorInput = {
   userId?: string;
+  ownerEmail?: string | null;
   name?: string;
   url: string;
   intervalMinutes: IntervalMinutes;
@@ -30,6 +31,7 @@ function getMonitorName(name: string | undefined, url: string) {
 export async function createMonitorRecord(input: CreateMonitorInput) {
   await connectToDatabase();
   const userId = input.userId?.trim() || "legacy";
+  const ownerEmail = input.ownerEmail?.trim().toLowerCase() || null;
   const defaultProject = await ensureDefaultProject(userId);
   let projectId = defaultProject._id;
   if (input.projectId && Types.ObjectId.isValid(input.projectId)) {
@@ -41,6 +43,7 @@ export async function createMonitorRecord(input: CreateMonitorInput) {
 
   const monitor = await Monitor.create({
     userId,
+    ownerEmail,
     projectId,
     name: getMonitorName(input.name, input.url),
     url: input.url,

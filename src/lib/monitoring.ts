@@ -130,6 +130,7 @@ function aggregateMonitorStatus(states: RegionCheckState[]): MonitorStatus {
 
 async function createIncident(params: {
   userId: string;
+  userEmail: string | null;
   monitorId: Types.ObjectId;
   projectId: Types.ObjectId | null;
   monitorName: string;
@@ -167,6 +168,7 @@ async function createIncident(params: {
 
     await dispatchAlert({
       userId: params.userId,
+      userEmail: params.userEmail,
       eventType: "down",
       projectId: params.projectId ? String(params.projectId) : null,
       monitorName: params.monitorName,
@@ -223,6 +225,7 @@ async function appendIncidentFailure(params: {
 
 async function resolveIncident(params: {
   userId: string;
+  userEmail: string | null;
   monitorId: Types.ObjectId;
   projectId: Types.ObjectId | null;
   monitorName: string;
@@ -265,6 +268,7 @@ async function resolveIncident(params: {
 
   await dispatchAlert({
     userId: params.userId,
+    userEmail: params.userEmail,
     eventType: "recovery",
     projectId: params.projectId ? String(params.projectId) : null,
     monitorName: params.monitorName,
@@ -411,6 +415,7 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
 
     await createIncident({
       userId: monitor.userId,
+      userEmail: monitor.ownerEmail ?? null,
       monitorId: monitor._id,
       projectId: monitor.projectId ?? null,
       monitorName: monitor.name,
@@ -432,6 +437,7 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
   if (openIncidentDoc) {
     await resolveIncident({
       userId: monitor.userId,
+      userEmail: monitor.ownerEmail ?? null,
       monitorId: monitor._id,
       projectId: monitor.projectId ?? null,
       monitorName: monitor.name,
@@ -449,6 +455,7 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
   ) {
     await dispatchAlert({
       userId: monitor.userId,
+      userEmail: monitor.ownerEmail ?? null,
       eventType: "high_latency",
       projectId: monitor.projectId ? String(monitor.projectId) : null,
       monitorName: monitor.name,

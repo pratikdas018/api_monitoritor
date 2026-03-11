@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
+import { USER_EMAIL_COOKIE_NAME } from "@/lib/auth";
 
 type UserMenuProps = {
   userId: string;
@@ -29,6 +30,7 @@ function getInitials(userId: string) {
 export function UserMenu({ userId }: UserMenuProps) {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const didSyncRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState<FirebaseProfile | null>(null);
@@ -58,6 +60,19 @@ export function UserMenu({ userId }: UserMenuProps) {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (didSyncRef.current) return;
+    if (!profile?.email) return;
+
+    const encoded = encodeURIComponent(profile.email);
+    document.cookie = `${USER_EMAIL_COOKIE_NAME}=${encoded}; path=/; max-age=604800; samesite=lax`;
+
+    didSyncRef.current = true;
+    fetch("/api/auth/sync", { method: "POST" }).catch(() => {
+      // Best-effort: alerts still work via configured email channels.
+    });
+  }, [profile?.email]);
 
   useEffect(() => {
     function onClickOutside(event: MouseEvent) {
