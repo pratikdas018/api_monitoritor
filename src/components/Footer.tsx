@@ -69,7 +69,17 @@ export function Footer() {
 
           <section>
             <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Developer</h3>
-            <p className="mt-3 text-sm text-slate-300">Developed by Pratik</p>
+            <p className="mt-3 text-sm text-slate-300">
+              Developed by{" "}
+              <a
+                href="https://pratik-web.vercel.app"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-sky-300 transition hover:text-sky-200"
+              >
+                Pratik
+              </a>
+            </p>
             <div className="mt-3 flex items-center gap-3">
               {socialLinks.map((link) => (
                 <a
