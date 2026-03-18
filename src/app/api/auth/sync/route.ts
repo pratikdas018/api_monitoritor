@@ -40,13 +40,19 @@ export async function POST() {
   }
 
   await connectToDatabase();
+  const normalizedEmail = email.toLowerCase();
 
   const result = await Monitor.updateMany(
     {
       userId,
-      $or: [{ ownerEmail: { $exists: false } }, { ownerEmail: null }, { ownerEmail: "" }],
+      $or: [
+        { ownerEmail: { $exists: false } },
+        { ownerEmail: null },
+        { ownerEmail: "" },
+        { ownerEmail: { $ne: normalizedEmail } },
+      ],
     },
-    { $set: { ownerEmail: email.toLowerCase() } },
+    { $set: { ownerEmail: normalizedEmail } },
   );
 
   return NextResponse.json({
@@ -54,4 +60,3 @@ export async function POST() {
     updated: "modifiedCount" in result ? result.modifiedCount : 0,
   });
 }
-

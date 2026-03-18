@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth";
 
 import { UserMenu } from "@/components/UserMenu";
+import { USER_ID_COOKIE_NAME } from "@/lib/auth";
+import { auth } from "@/lib/firebase";
 
 type NavbarProps = {
   userId: string | null;
@@ -26,6 +29,7 @@ function normalizePath(pathname: string | null) {
 export function Navbar({ userId, githubUrl }: NavbarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(userId);
 
   const navItems = useMemo<NavItem[]>(
     () => [
@@ -39,6 +43,68 @@ export function Navbar({ userId, githubUrl }: NavbarProps) {
   );
 
   const currentPath = normalizePath(pathname);
+
+  useEffect(() => {
+    if (userId) {
+      setResolvedUserId(userId);
+      return;
+    }
+
+    const cookieUserId = (() => {
+      const key = `${USER_ID_COOKIE_NAME}=`;
+      const cookieEntry = document.cookie
+        .split(";")
+        .map((entry) => entry.trim())
+        .find((entry) => entry.startsWith(key));
+
+      if (!cookieEntry) return null;
+
+      const raw = cookieEntry.slice(key.length).trim();
+      if (!raw) return null;
+
+      try {
+        return decodeURIComponent(raw);
+      } catch {
+        return raw;
+      }
+    })();
+
+    if (cookieUserId) {
+      setResolvedUserId(cookieUserId);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser?.uid) {
+        setResolvedUserId(firebaseUser.uid);
+        return;
+      }
+
+      const key = `${USER_ID_COOKIE_NAME}=`;
+      const cookieEntry = document.cookie
+        .split(";")
+        .map((entry) => entry.trim())
+        .find((entry) => entry.startsWith(key));
+
+      if (cookieEntry) {
+        const raw = cookieEntry.slice(key.length).trim();
+        if (raw) {
+          try {
+            setResolvedUserId(decodeURIComponent(raw));
+            return;
+          } catch {
+            setResolvedUserId(raw);
+            return;
+          }
+        }
+      }
+
+      setResolvedUserId(userId ?? null);
+    });
+
+    return () => unsubscribe();
+  }, [userId]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800/70 bg-slate-950/70 backdrop-blur-xl">
@@ -89,8 +155,8 @@ export function Navbar({ userId, githubUrl }: NavbarProps) {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          {userId ? (
-            <UserMenu userId={userId} />
+          {resolvedUserId ? (
+            <UserMenu userId={resolvedUserId} />
           ) : (
             <Link href="/login" className="btn-soft">
               Login
@@ -141,10 +207,10 @@ export function Navbar({ userId, githubUrl }: NavbarProps) {
             })}
 
             <div className="mt-2 border-t border-slate-800/80 pt-2">
-              {userId ? (
+              {resolvedUserId ? (
                 <div className="flex items-center justify-between rounded-xl border border-slate-700/80 bg-slate-900/70 px-3 py-2">
-                  <p className="max-w-[70%] truncate text-xs text-slate-300">{userId}</p>
-                  <UserMenu userId={userId} />
+                  <p className="max-w-[70%] truncate text-xs text-slate-300">{resolvedUserId}</p>
+                  <UserMenu userId={resolvedUserId} />
                 </div>
               ) : (
                 <Link

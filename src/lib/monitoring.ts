@@ -62,6 +62,15 @@ async function checkEndpoint(
     const response = await axios.get(url, {
       timeout: timeoutMs,
       validateStatus: () => true,
+      headers: {
+        // Some sites (e.g. Cloudflare-protected pages) block generic HTTP clients.
+        // A browser-like UA reduces false "DOWN" reports for publicly reachable pages.
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9",
+      },
     });
 
     const responseTimeMs = Date.now() - startedAt + jitterMs;

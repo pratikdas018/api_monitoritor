@@ -21,6 +21,8 @@ type HighLatencyPayload = {
 };
 
 let hasShownMailConfigWarning = false;
+let hasShownMailSenderWarning = false;
+let hasShownMailRecipientWarning = false;
 
 function getRecipients(overrideRecipients?: string[]) {
   if (overrideRecipients && overrideRecipients.length > 0) {
@@ -73,9 +75,23 @@ async function sendMail({
   html: string;
 }) {
   const transporter = getTransporter();
-  const from = process.env.SMTP_FROM;
+  const from = (process.env.SMTP_FROM ?? process.env.SMTP_USER ?? "").trim();
 
-  if (!transporter || !from || to.length === 0) {
+  if (!transporter) {
+    return false;
+  }
+  if (!from) {
+    if (!hasShownMailSenderWarning) {
+      hasShownMailSenderWarning = true;
+      console.warn("[mail] Missing SMTP_FROM/SMTP_USER. Email alerts are disabled.");
+    }
+    return false;
+  }
+  if (to.length === 0) {
+    if (!hasShownMailRecipientWarning) {
+      hasShownMailRecipientWarning = true;
+      console.warn("[mail] No alert recipients resolved for this runtime.");
+    }
     return false;
   }
 

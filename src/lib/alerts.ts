@@ -5,6 +5,7 @@ import {
   sendMonitorRecoveredEmail,
 } from "@/lib/mail";
 import AlertChannel from "@/models/AlertChannel";
+import Monitor from "@/models/Monitor";
 import type { MonitorRegion } from "@/models/Monitor";
 
 type AlertEventType = "down" | "recovery" | "high_latency";
@@ -40,6 +41,28 @@ function getFallbackRecipients(payload: Pick<AlertPayload, "userId" | "userEmail
     return [payload.userEmail.trim().toLowerCase()];
   }
   return getFallbackRecipientsForUser(payload.userId);
+}
+
+async function resolveFallbackRecipients(payload: Pick<AlertPayload, "userId" | "userEmail">) {
+  const direct = getFallbackRecipients(payload);
+  if (direct && direct.length > 0) {
+    return direct;
+  }
+
+  const monitorWithOwnerEmail = await Monitor.findOne({
+    userId: payload.userId,
+    ownerEmail: { $type: "string", $ne: "" },
+  })
+    .sort({ updatedAt: -1 })
+    .select("ownerEmail")
+    .lean<{ ownerEmail?: string | null } | null>();
+
+  const ownerEmail = monitorWithOwnerEmail?.ownerEmail?.trim().toLowerCase() ?? "";
+  if (looksLikeEmail(ownerEmail)) {
+    return [ownerEmail];
+  }
+
+  return undefined;
 }
 
 async function postJsonWebhook(url: string, body: Record<string, unknown>) {
@@ -168,7 +191,7 @@ export async function dispatchAlert(payload: AlertPayload) {
     shouldSendForEvent(payload.eventType, channel.events),
   );
 
-  const fallbackRecipients = getFallbackRecipients(payload);
+  const fallbackRecipients = await resolveFallbackRecipients(payload);
   const hasSendableEmailChannel = sendableChannels.some((channel) => channel.type === "email");
 
   // Always send an email to the owning user when we can infer their mailbox,
@@ -178,9 +201,15 @@ export async function dispatchAlert(payload: AlertPayload) {
   }
 
   if (sendableChannels.length === 0) {
-    // If we couldn't infer a user mailbox, fall back to env recipients for dev/demo.
+    // If we couldn't infer a user mailbox, only fall back to env recipients in non-production.
     if (!fallbackRecipients) {
-      await sendEmailAlert(undefined, payload);
+      if (process.env.NODE_ENV !== "production") {
+        await sendEmailAlert(undefined, payload);
+      } else {
+        console.warn(
+          `[alerts] No recipient resolved for userId "${payload.userId}" in production.`,
+        );
+      }
     }
     return;
   }

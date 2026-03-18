@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 
+import { requireUserId } from "@/lib/apiAuth";
 import { connectToDatabase, hasMongoConfig } from "@/lib/db";
 import CheckHistory from "@/models/CheckHistory";
+import Monitor from "@/models/Monitor";
 
 export const dynamic = "force-dynamic";
 
@@ -23,23 +26,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ history: [] });
     }
 
+    const auth = requireUserId(request);
+    if (auth.error) {
+      return auth.error;
+    }
+
     const monitorId = request.nextUrl.searchParams.get("monitorId");
     const projectId = request.nextUrl.searchParams.get("projectId");
     const range = request.nextUrl.searchParams.get("range");
     const since = getRangeStart(range);
 
+    await connectToDatabase();
+    const monitorQuery: Record<string, unknown> = { userId: auth.userId };
+    if (monitorId && Types.ObjectId.isValid(monitorId)) {
+      monitorQuery._id = monitorId;
+    }
+    if (projectId && Types.ObjectId.isValid(projectId)) {
+      monitorQuery.projectId = projectId;
+    }
+
+    const ownedMonitorIds = (await Monitor.find(monitorQuery).select("_id").lean()).map(
+      (monitor) => monitor._id,
+    );
+    if (ownedMonitorIds.length === 0) {
+      return NextResponse.json({ history: [] });
+    }
+
     const query: Record<string, unknown> = {
+      monitorId: { $in: ownedMonitorIds },
       timestamp: { $gte: since },
     };
 
-    if (monitorId) {
-      query.monitorId = monitorId;
-    }
-    if (projectId) {
-      query.projectId = projectId;
-    }
-
-    await connectToDatabase();
     const history = await CheckHistory.find(query).sort({ timestamp: 1 }).limit(5000).lean();
 
     return NextResponse.json({ history });

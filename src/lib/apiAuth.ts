@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { USER_ID_COOKIE_NAME } from "@/lib/auth";
+import { SESSION_COOKIE_NAME, USER_EMAIL_COOKIE_NAME, USER_ID_COOKIE_NAME } from "@/lib/auth";
 
 export function getCurrentUserIdFromRequest(request: NextRequest) {
-  const headerUserId = request.headers.get("x-user-id")?.trim();
-  if (!headerUserId) return null;
+  const sessionValue = request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "";
+  if (!sessionValue) return null;
 
   const cookieUserIdRaw = request.cookies.get(USER_ID_COOKIE_NAME)?.value ?? "";
   const cookieUserId = (() => {
@@ -15,11 +15,14 @@ export function getCurrentUserIdFromRequest(request: NextRequest) {
     }
   })();
 
-  if (cookieUserId && cookieUserId !== headerUserId) {
+  if (!cookieUserId) return null;
+
+  const headerUserId = request.headers.get("x-user-id")?.trim();
+  if (headerUserId && cookieUserId !== headerUserId) {
     return null;
   }
 
-  return headerUserId;
+  return cookieUserId;
 }
 
 export function requireUserId(request: NextRequest) {
@@ -28,7 +31,7 @@ export function requireUserId(request: NextRequest) {
     return {
       userId: null,
       error: NextResponse.json(
-        { error: "Unauthorized: missing x-user-id header" },
+        { error: "Unauthorized: login required" },
         { status: 401 },
       ),
     };
@@ -43,4 +46,29 @@ export function ensurePayloadUserMatch(payloadUserId: unknown, currentUserId: st
   }
 
   return null;
+}
+
+function looksLikeEmail(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length < 6 || trimmed.length > 254) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+export function getCurrentUserEmailFromRequest(request: NextRequest) {
+  const sessionValue = request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "";
+  if (!sessionValue) return null;
+
+  const rawEmail = request.cookies.get(USER_EMAIL_COOKIE_NAME)?.value ?? "";
+  let email = rawEmail.trim();
+  try {
+    email = decodeURIComponent(email).trim();
+  } catch {
+    // Keep raw if decode fails.
+  }
+
+  if (!looksLikeEmail(email)) {
+    return null;
+  }
+
+  return email.toLowerCase();
 }

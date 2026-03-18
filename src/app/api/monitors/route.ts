@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireUserId, ensurePayloadUserMatch } from "@/lib/apiAuth";
+import { requireUserId, ensurePayloadUserMatch, getCurrentUserEmailFromRequest } from "@/lib/apiAuth";
 import { connectToDatabase, hasMongoConfig } from "@/lib/db";
 import { createMonitorRecord } from "@/lib/monitorMutations";
 import { runMonitorCheck } from "@/lib/monitoring";
@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
     const monitor = await createMonitorRecord({
       ...parsed.data,
       userId: auth.userId as string,
+      ownerEmail: getCurrentUserEmailFromRequest(request),
     });
     let mode: "queued" | "inline" | "deferred" = "queued";
 

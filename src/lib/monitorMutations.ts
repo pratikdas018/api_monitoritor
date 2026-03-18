@@ -16,6 +16,12 @@ type CreateMonitorInput = {
   projectId?: string;
 };
 
+function looksLikeEmail(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length < 6 || trimmed.length > 254) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
 function getMonitorName(name: string | undefined, url: string) {
   if (name && name.trim().length > 0) {
     return name.trim();
@@ -31,7 +37,9 @@ function getMonitorName(name: string | undefined, url: string) {
 export async function createMonitorRecord(input: CreateMonitorInput) {
   await connectToDatabase();
   const userId = input.userId?.trim() || "legacy";
-  const ownerEmail = input.ownerEmail?.trim().toLowerCase() || null;
+  const ownerEmail =
+    input.ownerEmail?.trim().toLowerCase() ||
+    (looksLikeEmail(userId) ? userId.toLowerCase() : null);
   const defaultProject = await ensureDefaultProject(userId);
   let projectId = defaultProject._id;
   if (input.projectId && Types.ObjectId.isValid(input.projectId)) {

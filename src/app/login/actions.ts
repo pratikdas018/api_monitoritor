@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { LOCAL_DEMO_USER_ID, SESSION_COOKIE_NAME, USER_EMAIL_COOKIE_NAME, USER_ID_COOKIE_NAME, isValidLogin, normalizeUserId } from "@/lib/auth";
+import { connectToDatabase, hasMongoConfig } from "@/lib/db";
+import Monitor from "@/models/Monitor";
 
 export type LoginState = {
   status: "idle" | "error";
@@ -46,6 +48,28 @@ export async function loginAction(
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });
+
+  // Backfill older monitors so production alerts can route to the logged-in mailbox.
+  try {
+    if (hasMongoConfig()) {
+      await connectToDatabase();
+      const normalizedEmail = normalizeUserId(email);
+      await Monitor.updateMany(
+        {
+          userId: normalizedEmail || LOCAL_DEMO_USER_ID,
+          $or: [
+            { ownerEmail: { $exists: false } },
+            { ownerEmail: null },
+            { ownerEmail: "" },
+            { ownerEmail: { $ne: normalizedEmail } },
+          ],
+        },
+        { $set: { ownerEmail: normalizedEmail } },
+      );
+    }
+  } catch (error) {
+    console.warn("[auth] ownerEmail backfill skipped", error);
+  }
 
   redirect(nextPath.startsWith("/") ? nextPath : "/dashboard");
 }

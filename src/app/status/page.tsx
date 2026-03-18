@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { IncidentHistory } from "@/components/status/IncidentHistory";
 import {
@@ -33,6 +34,10 @@ function averageLatency(
 
 export default async function StatusPage() {
   const userId = getSessionUserId();
+  if (!userId) {
+    redirect("/login?next=/status");
+  }
+
   const [monitors, incidents, dashboardData] = await Promise.all([
     getStatusMonitors(undefined, userId),
     getIncidents(30, userId),
@@ -91,7 +96,7 @@ export default async function StatusPage() {
             API Health Status
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            {userId ? `Showing monitors for ${userId}.` : "No authentication required."} Last checked at{" "}
+            {`Showing monitors for ${userId}.`} Last checked at{" "}
             {formatDateTime(generatedAt)}.
           </p>
         </div>
