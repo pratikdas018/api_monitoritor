@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { z } from "zod";
 
-import { requireUserId } from "@/lib/apiAuth";
+import { getCurrentUserEmailFromRequest, requireUserId } from "@/lib/apiAuth";
+import { getRequestContext, recordActivity } from "@/lib/activity";
 import { connectToDatabase, hasMongoConfig } from "@/lib/db";
 import Monitor from "@/models/Monitor";
 
@@ -64,6 +65,19 @@ export async function PATCH(
   Object.assign(monitor, parsed.data);
   await monitor.save();
 
+  const { ipAddress, userAgent } = getRequestContext(request);
+  await recordActivity({
+    userId: auth.userId as string,
+    userEmail: getCurrentUserEmailFromRequest(request),
+    role: "user",
+    action: "update_api_monitor",
+    targetType: "monitor",
+    targetId: params.id,
+    ipAddress,
+    userAgent,
+    metadata: parsed.data,
+  }).catch(() => null);
+
   return NextResponse.json({ monitor });
 }
 
@@ -95,5 +109,18 @@ export async function DELETE(
   }
 
   await Monitor.findByIdAndDelete(params.id);
+
+  const { ipAddress, userAgent } = getRequestContext(request);
+  await recordActivity({
+    userId: auth.userId as string,
+    userEmail: getCurrentUserEmailFromRequest(request),
+    role: "user",
+    action: "delete_api_monitor",
+    targetType: "monitor",
+    targetId: params.id,
+    ipAddress,
+    userAgent,
+  }).catch(() => null);
+
   return NextResponse.json({ ok: true });
 }

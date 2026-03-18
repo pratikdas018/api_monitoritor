@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserId, ensurePayloadUserMatch, getCurrentUserEmailFromRequest } from "@/lib/apiAuth";
+import { getRequestContext, recordActivity, upsertUserProfile } from "@/lib/activity";
 import { connectToDatabase, hasMongoConfig } from "@/lib/db";
 import { createMonitorRecord } from "@/lib/monitorMutations";
 import { runMonitorCheck } from "@/lib/monitoring";
@@ -101,10 +102,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const currentUserEmail = getCurrentUserEmailFromRequest(request);
+    if (currentUserEmail) {
+      await upsertUserProfile({
+        authId: auth.userId as string,
+        email: currentUserEmail,
+        role: "user",
+        status: "active",
+      }).catch(() => null);
+    }
+
     const monitor = await createMonitorRecord({
       ...parsed.data,
       userId: auth.userId as string,
-      ownerEmail: getCurrentUserEmailFromRequest(request),
+      ownerEmail: currentUserEmail,
     });
     let mode: "queued" | "inline" | "deferred" = "queued";
 
@@ -123,6 +134,24 @@ export async function POST(request: NextRequest) {
         mode = "deferred";
       }
     }
+
+    const { ipAddress, userAgent } = getRequestContext(request);
+    await recordActivity({
+      userId: auth.userId as string,
+      userEmail: currentUserEmail,
+      role: "user",
+      action: "add_api_monitor",
+      targetType: "monitor",
+      targetId: monitor.id,
+      ipAddress,
+      userAgent,
+      metadata: {
+        projectId: parsed.data.projectId ?? null,
+        url: parsed.data.url,
+        intervalMinutes: parsed.data.intervalMinutes,
+        executionMode: mode,
+      },
+    }).catch(() => null);
 
     return NextResponse.json(
       {

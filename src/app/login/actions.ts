@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { LOCAL_DEMO_USER_ID, SESSION_COOKIE_NAME, USER_EMAIL_COOKIE_NAME, USER_ID_COOKIE_NAME, isValidLogin, normalizeUserId } from "@/lib/auth";
+import { recordActivity, upsertUserProfile } from "@/lib/activity";
 import { connectToDatabase, hasMongoConfig } from "@/lib/db";
 import Monitor from "@/models/Monitor";
 
@@ -70,6 +71,25 @@ export async function loginAction(
   } catch (error) {
     console.warn("[auth] ownerEmail backfill skipped", error);
   }
+
+  const normalizedEmail = normalizeUserId(email);
+  await upsertUserProfile({
+    authId: normalizedEmail || LOCAL_DEMO_USER_ID,
+    email: normalizedEmail,
+    role: "user",
+    status: "active",
+    touchLoginAt: true,
+  }).catch(() => null);
+
+  await recordActivity({
+    userId: normalizedEmail || LOCAL_DEMO_USER_ID,
+    userEmail: normalizedEmail,
+    role: "user",
+    action: "user_login",
+    targetType: "session",
+    targetId: null,
+    metadata: { source: "password_login" },
+  }).catch(() => null);
 
   redirect(nextPath.startsWith("/") ? nextPath : "/dashboard");
 }

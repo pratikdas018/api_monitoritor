@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 
 import { createAlertChannel } from "@/lib/alertChannels";
+import { recordActivity, upsertUserProfile } from "@/lib/activity";
 import { connectToDatabase, hasMongoConfig } from "@/lib/db";
 import { createMonitorRecord, resolveIncidentByOperator, toggleMonitorPause } from "@/lib/monitorMutations";
 import { createProject } from "@/lib/projects";
@@ -136,6 +137,15 @@ export async function createMonitorAction(
   let monitorId: string;
 
   try {
+    if (ownerEmail) {
+      await upsertUserProfile({
+        authId: userId,
+        email: ownerEmail,
+        role: "user",
+        status: "active",
+      }).catch(() => null);
+    }
+
     const monitor = await createMonitorRecord({ ...parsed.data, userId, ownerEmail });
     monitorId = monitor.id;
   } catch (error) {
@@ -148,6 +158,20 @@ export async function createMonitorAction(
 
   try {
     const executionMode = await enqueueCheckWithInlineFallback(monitorId, "create");
+    await recordActivity({
+      userId,
+      userEmail: ownerEmail,
+      role: "user",
+      action: "add_api_monitor",
+      targetType: "monitor",
+      targetId: monitorId,
+      metadata: {
+        projectId: parsed.data.projectId ?? null,
+        url: parsed.data.url,
+        intervalMinutes: parsed.data.intervalMinutes,
+        executionMode,
+      },
+    }).catch(() => null);
     revalidateMonitoringPages();
 
     return {
@@ -204,6 +228,15 @@ export async function createProjectAction(
 
   try {
     await createProject(parsed.data, userId);
+    await recordActivity({
+      userId,
+      userEmail: getSessionUserEmail(),
+      role: "user",
+      action: "create_project",
+      targetType: "project",
+      targetId: null,
+      metadata: { name: parsed.data.name },
+    }).catch(() => null);
     revalidateMonitoringPages();
     return {
       status: "success" as const,
@@ -265,6 +298,15 @@ export async function createAlertChannelAction(
 
   try {
     await createAlertChannel({ ...parsed.data, userId });
+    await recordActivity({
+      userId,
+      userEmail: getSessionUserEmail(),
+      role: "user",
+      action: "create_alert_channel",
+      targetType: "alert_channel",
+      targetId: null,
+      metadata: { type: parsed.data.type, name: parsed.data.name },
+    }).catch(() => null);
     revalidateMonitoringPages();
     return {
       status: "success" as const,

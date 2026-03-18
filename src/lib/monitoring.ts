@@ -13,6 +13,7 @@ import Monitor, {
   type MonitorStatus,
   type RegionCheckState,
 } from "@/models/Monitor";
+import MonitorLog from "@/models/MonitorLog";
 
 const MAX_LATENCY_SAMPLES = 300;
 const FAILURE_RETRY_DELAYS_MS = [10_000, 30_000] as const;
@@ -189,6 +190,21 @@ async function createIncident(params: {
       statusCode: params.statusCode,
       errorMessage: message,
     });
+
+    await createMonitorEventLog({
+      monitorId: params.monitorId,
+      projectId: params.projectId,
+      userId: params.userId,
+      eventType: "incident_open",
+      status: "down",
+      region: params.region,
+      responseTimeMs: params.responseTimeMs,
+      statusCode: params.statusCode,
+      message,
+      checkedAt: params.checkedAt,
+    }).catch((error) => {
+      console.warn("[monitoring] incident_open log failed", error);
+    });
   } catch (error: unknown) {
     if (
       typeof error === "object" &&
@@ -288,6 +304,21 @@ async function resolveIncident(params: {
     responseTimeMs: params.responseTimeMs,
     statusCode: params.statusCode,
   });
+
+  await createMonitorEventLog({
+    monitorId: params.monitorId,
+    projectId: params.projectId,
+    userId: params.userId,
+    eventType: "incident_resolved",
+    status: "up",
+    region: params.region,
+    responseTimeMs: params.responseTimeMs,
+    statusCode: params.statusCode,
+    message: `[${params.region}] Endpoint recovered successfully.`,
+    checkedAt: params.checkedAt,
+  }).catch((error) => {
+    console.warn("[monitoring] incident_resolved log failed", error);
+  });
 }
 
 async function saveHistory(params: {
@@ -309,6 +340,37 @@ async function saveHistory(params: {
     statusCode: params.statusCode,
     errorMessage: params.errorMessage,
     timestamp: params.timestamp,
+  });
+}
+
+async function createMonitorEventLog(params: {
+  monitorId: Types.ObjectId;
+  projectId: Types.ObjectId | null;
+  userId: string;
+  eventType:
+    | "status_up"
+    | "status_down"
+    | "incident_open"
+    | "incident_resolved"
+    | "latency_high";
+  status: MonitorStatus | null;
+  region: MonitorRegion | null;
+  responseTimeMs: number | null;
+  statusCode: number | null;
+  message: string | null;
+  checkedAt: Date;
+}) {
+  await MonitorLog.create({
+    monitorId: params.monitorId,
+    projectId: params.projectId,
+    userId: params.userId,
+    eventType: params.eventType,
+    status: params.status,
+    region: params.region,
+    responseTimeMs: params.responseTimeMs,
+    statusCode: params.statusCode,
+    message: params.message,
+    timestamp: params.checkedAt,
   });
 }
 
@@ -384,6 +446,21 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     statusCode: result.statusCode,
     errorMessage: result.errorMessage,
     timestamp: checkedAt,
+  });
+
+  await createMonitorEventLog({
+    monitorId: monitor._id,
+    projectId: monitor.projectId ?? null,
+    userId: monitor.userId,
+    eventType: result.success ? "status_up" : "status_down",
+    status: regionStatus,
+    region,
+    responseTimeMs: result.responseTimeMs,
+    statusCode: result.statusCode,
+    message: result.errorMessage,
+    checkedAt,
+  }).catch((error) => {
+    console.warn("[monitoring] status log failed", error);
   });
 
   const openIncidentDoc = await Incident.findOne({
@@ -474,6 +551,21 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
       responseTimeMs: result.responseTimeMs,
       statusCode: result.statusCode,
       errorMessage: result.errorMessage,
+    });
+
+    await createMonitorEventLog({
+      monitorId: monitor._id,
+      projectId: monitor.projectId ?? null,
+      userId: monitor.userId,
+      eventType: "latency_high",
+      status: "up",
+      region,
+      responseTimeMs: result.responseTimeMs,
+      statusCode: result.statusCode,
+      message: `Latency threshold exceeded (${HIGH_LATENCY_THRESHOLD_MS} ms).`,
+      checkedAt,
+    }).catch((error) => {
+      console.warn("[monitoring] latency_high log failed", error);
     });
   }
 }

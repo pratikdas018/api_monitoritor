@@ -81,3 +81,41 @@ body {
     opacity: 0.25;
   }
 }
+
+html.admin-light {
+  --background: #f4f7ff;
+  --foreground: #0f172a;
+}
+
+html.admin-light .admin-shell {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+html.admin-light .admin-shell .bg-slate-950,
+html.admin-light .admin-shell .bg-slate-950\/90,
+html.admin-light .admin-shell .bg-slate-950\/95,
+html.admin-light .admin-shell .bg-slate-950\/60,
+html.admin-light .admin-shell .bg-slate-900\/60,
+html.admin-light .admin-shell .bg-slate-900\/70,
+html.admin-light .admin-shell .bg-slate-900\/50 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+html.admin-light .admin-shell .text-slate-100,
+html.admin-light .admin-shell .text-slate-200 {
+  color: #0f172a !important;
+}
+
+html.admin-light .admin-shell .text-slate-300,
+html.admin-light .admin-shell .text-slate-400,
+html.admin-light .admin-shell .text-slate-500 {
+  color: #334155 !important;
+}
+
+html.admin-light .admin-shell .border-slate-800\/80,
+html.admin-light .admin-shell .border-slate-800\/70,
+html.admin-light .admin-shell .border-slate-800\/60,
+html.admin-light .admin-shell .border-slate-700\/80 {
+  border-color: rgba(100, 116, 139, 0.35) !important;
+}

@@ -1,9 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/adminAuth";
 import { SESSION_COOKIE_NAME, USER_ID_COOKIE_NAME } from "@/lib/auth";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminApiRoute = pathname.startsWith("/api/admin");
+  if (isAdminRoute || isAdminApiRoute) {
+    const isAdminLoginRoute = pathname === "/admin/login";
+    const isAdminLoginApi = pathname.startsWith("/api/admin/login");
+    const adminToken = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value ?? "";
+    const adminSession = adminToken ? await verifyAdminSessionToken(adminToken) : null;
+
+    if (adminSession) {
+      if (isAdminLoginRoute) {
+        return NextResponse.redirect(new URL("/admin", request.url));
+      }
+      return NextResponse.next();
+    }
+
+    if (isAdminLoginRoute || isAdminLoginApi) {
+      return NextResponse.next();
+    }
+
+    if (isAdminApiRoute) {
+      return NextResponse.json({ error: "Unauthorized: admin login required" }, { status: 401 });
+    }
+
+    const adminLoginUrl = new URL("/admin/login", request.url);
+    adminLoginUrl.searchParams.set("next", pathname + request.nextUrl.search);
+    return NextResponse.redirect(adminLoginUrl);
+  }
+
   const sessionValue = request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "";
   const isAuthenticated = Boolean(sessionValue);
   const cookieUserIdRaw = request.cookies.get(USER_ID_COOKIE_NAME)?.value ?? "";
@@ -51,6 +81,8 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
     "/dashboard/:path*",
     "/profile/:path*",
     "/status/:path*",

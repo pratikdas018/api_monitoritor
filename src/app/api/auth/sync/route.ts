@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
+import { recordActivity, upsertUserProfile } from "@/lib/activity";
 import { connectToDatabase, hasMongoConfig } from "@/lib/db";
 import { SESSION_COOKIE_NAME, USER_EMAIL_COOKIE_NAME, USER_ID_COOKIE_NAME } from "@/lib/auth";
 import Monitor from "@/models/Monitor";
@@ -54,6 +55,26 @@ export async function POST() {
     },
     { $set: { ownerEmail: normalizedEmail } },
   );
+
+  await upsertUserProfile({
+    authId: userId,
+    email: normalizedEmail,
+    role: "user",
+    status: "active",
+    touchLoginAt: true,
+  }).catch(() => null);
+
+  await recordActivity({
+    userId,
+    userEmail: normalizedEmail,
+    role: "user",
+    action: "user_auth_sync",
+    targetType: "monitor",
+    targetId: null,
+    metadata: {
+      updatedMonitorCount: "modifiedCount" in result ? result.modifiedCount : 0,
+    },
+  }).catch(() => null);
 
   return NextResponse.json({
     ok: true,

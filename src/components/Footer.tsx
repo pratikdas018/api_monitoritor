@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 type FooterLink = {
   label: string;
@@ -48,6 +51,11 @@ function renderLink(link: FooterLink) {
 }
 
 export function Footer() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <footer className="border-t border-slate-800/70 bg-[linear-gradient(180deg,rgba(2,6,23,0.75),rgba(2,6,23,0.97))]">
       <div className="mx-auto w-full max-w-[1400px] px-4 py-10 sm:px-6 lg:px-10">

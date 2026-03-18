@@ -28,6 +28,7 @@ function normalizePath(pathname: string | null) {
 
 export function Navbar({ userId, githubUrl }: NavbarProps) {
   const pathname = usePathname();
+  const isAdminPath = pathname?.startsWith("/admin");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(userId);
 
@@ -105,6 +106,10 @@ export function Navbar({ userId, githubUrl }: NavbarProps) {
 
     return () => unsubscribe();
   }, [userId]);
+
+  if (isAdminPath) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800/70 bg-slate-950/70 backdrop-blur-xl">
