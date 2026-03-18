@@ -90,11 +90,13 @@ function normalizeEmail(value: string) {
 }
 
 export function getExpectedAdminEmail() {
-  return normalizeEmail(process.env.ADMIN_LOGIN_EMAIL ?? "");
+  return normalizeEmail(
+    process.env.ADMIN_LOGIN_EMAIL ?? process.env.APP_LOGIN_EMAIL ?? "",
+  );
 }
 
 export function getExpectedAdminPassword() {
-  return process.env.ADMIN_LOGIN_PASSWORD ?? "";
+  return process.env.ADMIN_LOGIN_PASSWORD ?? process.env.APP_LOGIN_PASSWORD ?? "";
 }
 
 export function isValidAdminCredentials(email: string, password: string) {

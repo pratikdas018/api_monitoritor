@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
-import { USER_EMAIL_COOKIE_NAME } from "@/lib/auth";
+import { USER_EMAIL_COOKIE_NAME, USER_SESSION_INACTIVITY_SECONDS } from "@/lib/auth";
 
 type UserMenuProps = {
   userId: string;
@@ -66,7 +66,7 @@ export function UserMenu({ userId }: UserMenuProps) {
     if (!profile?.email) return;
 
     const encoded = encodeURIComponent(profile.email);
-    document.cookie = `${USER_EMAIL_COOKIE_NAME}=${encoded}; path=/; max-age=604800; samesite=lax`;
+    document.cookie = `${USER_EMAIL_COOKIE_NAME}=${encoded}; path=/; max-age=${USER_SESSION_INACTIVITY_SECONDS}; samesite=lax`;
 
     didSyncRef.current = true;
     fetch("/api/auth/sync", { method: "POST" }).catch(() => {

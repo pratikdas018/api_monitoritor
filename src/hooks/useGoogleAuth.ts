@@ -11,7 +11,12 @@ import {
 } from "firebase/auth";
 
 import { auth, googleProvider } from "@/lib/firebase";
-import { SESSION_COOKIE_NAME, USER_EMAIL_COOKIE_NAME, USER_ID_COOKIE_NAME } from "@/lib/auth";
+import {
+  SESSION_COOKIE_NAME,
+  USER_EMAIL_COOKIE_NAME,
+  USER_ID_COOKIE_NAME,
+  USER_SESSION_INACTIVITY_SECONDS,
+} from "@/lib/auth";
 
 type AuthUser = {
   uid: string;
@@ -31,7 +36,7 @@ function mapFirebaseUser(user: FirebaseUser | null): AuthUser | null {
 }
 
 function setAppSessionCookie() {
-  document.cookie = `${SESSION_COOKIE_NAME}=authenticated; path=/; max-age=604800; samesite=lax`;
+  document.cookie = `${SESSION_COOKIE_NAME}=authenticated; path=/; max-age=${USER_SESSION_INACTIVITY_SECONDS}; samesite=lax`;
 }
 
 function clearAppSessionCookie() {
@@ -40,12 +45,12 @@ function clearAppSessionCookie() {
 
 function setUserIdCookie(uid: string) {
   const encodedUid = encodeURIComponent(uid);
-  document.cookie = `${USER_ID_COOKIE_NAME}=${encodedUid}; path=/; max-age=604800; samesite=lax`;
+  document.cookie = `${USER_ID_COOKIE_NAME}=${encodedUid}; path=/; max-age=${USER_SESSION_INACTIVITY_SECONDS}; samesite=lax`;
 }
 
 function setUserEmailCookie(email: string) {
   const encoded = encodeURIComponent(email);
-  document.cookie = `${USER_EMAIL_COOKIE_NAME}=${encoded}; path=/; max-age=604800; samesite=lax`;
+  document.cookie = `${USER_EMAIL_COOKIE_NAME}=${encoded}; path=/; max-age=${USER_SESSION_INACTIVITY_SECONDS}; samesite=lax`;
 }
 
 function clearUserIdCookie() {

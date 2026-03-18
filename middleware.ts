@@ -1,7 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/adminAuth";
-import { SESSION_COOKIE_NAME, USER_ID_COOKIE_NAME } from "@/lib/auth";
+import {
+  SESSION_COOKIE_NAME,
+  USER_EMAIL_COOKIE_NAME,
+  USER_ID_COOKIE_NAME,
+  USER_SESSION_INACTIVITY_SECONDS,
+} from "@/lib/auth";
+
+function looksLikeEmail(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length < 6 || trimmed.length > 254) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+}
+
+function getUserCookieOptions(request: NextRequest) {
+  return {
+    path: "/",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production" || request.nextUrl.protocol === "https:",
+    maxAge: USER_SESSION_INACTIVITY_SECONDS,
+  };
+}
+
+function clearUserCookies(response: NextResponse) {
+  response.cookies.set(SESSION_COOKIE_NAME, "", { path: "/", maxAge: 0 });
+  response.cookies.set(USER_ID_COOKIE_NAME, "", { path: "/", maxAge: 0 });
+  response.cookies.set(USER_EMAIL_COOKIE_NAME, "", { path: "/", maxAge: 0 });
+  return response;
+}
+
+function withRefreshedUserSession(
+  request: NextRequest,
+  response: NextResponse,
+  userId: string,
+) {
+  const options = getUserCookieOptions(request);
+  response.cookies.set(SESSION_COOKIE_NAME, "authenticated", {
+    ...options,
+    httpOnly: true,
+  });
+  response.cookies.set(USER_ID_COOKIE_NAME, encodeURIComponent(userId), {
+    ...options,
+    httpOnly: false,
+  });
+
+  const currentEmailCookie = request.cookies.get(USER_EMAIL_COOKIE_NAME)?.value ?? "";
+  if (currentEmailCookie) {
+    response.cookies.set(USER_EMAIL_COOKIE_NAME, currentEmailCookie, {
+      ...options,
+      httpOnly: false,
+    });
+  } else if (looksLikeEmail(userId)) {
+    response.cookies.set(USER_EMAIL_COOKIE_NAME, encodeURIComponent(userId.toLowerCase()), {
+      ...options,
+      httpOnly: false,
+    });
+  }
+
+  return response;
+}
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -54,10 +112,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/api/history")
   ) {
     if (!isAuthenticated || !cookieUserId) {
-      return NextResponse.json(
+      return clearUserCookies(NextResponse.json(
         { error: "Unauthorized: login required" },
         { status: 401 },
-      );
+      ));
     }
 
     const headerUserId = request.headers.get("x-user-id")?.trim();
@@ -67,16 +125,16 @@ export async function middleware(request: NextRequest) {
         { status: 403 },
       );
     }
-    return NextResponse.next();
+    return withRefreshedUserSession(request, NextResponse.next(), cookieUserId);
   }
 
   if (isAuthenticated && cookieUserId) {
-    return NextResponse.next();
+    return withRefreshedUserSession(request, NextResponse.next(), cookieUserId);
   }
 
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
-  return NextResponse.redirect(loginUrl);
+  return clearUserCookies(NextResponse.redirect(loginUrl));
 }
 
 export const config = {
