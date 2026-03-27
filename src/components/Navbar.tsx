@@ -39,6 +39,9 @@ export function Navbar({ githubUrl }: NavbarProps) {
     () => [
       { label: "Home", href: "/" },
       { label: "Dashboard", href: "/dashboard" },
+      { label: "Repos", href: "/repos" },
+      { label: "Monitor", href: "/monitor" },
+      { label: "Analysis", href: "/analysis" },
       { label: "Status Page", href: "/status" },
       { label: "Incidents", href: "/incidents" },
       {

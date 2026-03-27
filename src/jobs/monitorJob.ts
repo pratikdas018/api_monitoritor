@@ -3,10 +3,12 @@ import "../lib/loadEnv";
 
 import { connectToDatabase, hasMongoConfig } from "../lib/db";
 import { enqueueMonitorCheck } from "../lib/queue";
+import { isRedisReachable } from "../lib/redis";
 import Monitor from "../models/Monitor";
 
 const cronExpression = process.env.MONITOR_SCHEDULER_CRON ?? "*/1 * * * *";
 let hasShownMissingMongoWarning = false;
+let hasShownRedisWarning = false;
 
 async function enqueueDueMonitors() {
   if (!hasMongoConfig()) {
@@ -15,6 +17,19 @@ async function enqueueDueMonitors() {
       console.warn("[scheduler] MONGODB_URI is missing. Scheduler is idle until env is configured.");
     }
     return;
+  }
+
+  const redisReady = await isRedisReachable();
+  if (!redisReady) {
+    if (!hasShownRedisWarning) {
+      hasShownRedisWarning = true;
+      console.warn("[scheduler] Redis is unavailable. Scheduler will retry on next tick.");
+    }
+    return;
+  }
+  if (hasShownRedisWarning) {
+    hasShownRedisWarning = false;
+    console.log("[scheduler] Redis connection restored.");
   }
 
   await connectToDatabase();

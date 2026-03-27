@@ -6,6 +6,7 @@ import {
 } from "@/lib/mail";
 import AlertChannel from "@/models/AlertChannel";
 import Monitor from "@/models/Monitor";
+import User from "@/models/User";
 import type { MonitorRegion } from "@/models/Monitor";
 
 type AlertEventType = "down" | "recovery" | "high_latency";
@@ -60,6 +61,17 @@ async function resolveFallbackRecipients(payload: Pick<AlertPayload, "userId" | 
   const ownerEmail = monitorWithOwnerEmail?.ownerEmail?.trim().toLowerCase() ?? "";
   if (looksLikeEmail(ownerEmail)) {
     return [ownerEmail];
+  }
+
+  // Final fallback: resolve from user profile for authId-based tenants.
+  const user = await User.findOne({
+    $or: [{ authId: payload.userId }, { email: payload.userId }],
+  })
+    .select("email")
+    .lean<{ email?: string | null } | null>();
+  const profileEmail = user?.email?.trim().toLowerCase() ?? "";
+  if (looksLikeEmail(profileEmail)) {
+    return [profileEmail];
   }
 
   return undefined;
@@ -125,7 +137,7 @@ async function sendEmailAlert(to: string[] | undefined, payload: AlertPayload) {
 async function sendChannelAlert(channel: {
   type: "email" | "slack" | "discord" | "telegram";
   config: Record<string, unknown>;
-}, payload: AlertPayload) {
+}, payload: AlertPayload, fallbackRecipients?: string[]) {
   const title = `[${payload.eventType.toUpperCase()}] ${payload.monitorName} (${payload.region})`;
   const message = payload.errorMessage ?? "No additional error context.";
 
@@ -134,7 +146,10 @@ async function sendChannelAlert(channel: {
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean);
-    return sendEmailAlert(recipients.length > 0 ? recipients : undefined, payload);
+    // If channel recipients are empty, default to resolved user mailbox
+    // instead of env-level ALERT_EMAIL_TO.
+    const resolvedRecipients = recipients.length > 0 ? recipients : fallbackRecipients;
+    return sendEmailAlert(resolvedRecipients, payload);
   }
 
   if (channel.type === "slack") {
@@ -222,6 +237,7 @@ export async function dispatchAlert(payload: AlertPayload) {
           config: (channel.config as Record<string, unknown>) ?? {},
         },
         payload,
+        fallbackRecipients,
       ),
     ),
   );

@@ -19,6 +19,7 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     provider?: string | null;
+    githubAccessToken?: string | null;
     role?: "user" | "admin";
     status?: "active" | "suspended" | "deleted";
   }
@@ -116,10 +117,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider) {
         token.provider = account.provider;
       }
+      // Keep GitHub access token only in JWT (server-side use), never in session payload.
+      if (account?.provider === "github" && typeof account.access_token === "string") {
+        token.githubAccessToken = account.access_token;
+      }
 
       token.role = token.role ?? "user";
       token.status = token.status ?? "active";
       token.provider = token.provider ?? null;
+      token.githubAccessToken = token.githubAccessToken ?? null;
       return token;
     },
     async session({ session, token }) {

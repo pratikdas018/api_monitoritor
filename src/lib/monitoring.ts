@@ -13,6 +13,7 @@ import Monitor, {
   type MonitorStatus,
   type RegionCheckState,
 } from "@/models/Monitor";
+import ApiLog from "@/models/ApiLog";
 import MonitorLog from "@/models/MonitorLog";
 
 const MAX_LATENCY_SAMPLES = 300;
@@ -49,7 +50,18 @@ type CheckResult = {
   responseTimeMs: number | null;
   statusCode: number | null;
   errorMessage: string | null;
+  responseBody: string | null;
 };
+
+function normalizeResponseBody(value: unknown) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string") return value.slice(0, 8_000);
+  try {
+    return JSON.stringify(value).slice(0, 8_000);
+  } catch {
+    return String(value).slice(0, 8_000);
+  }
+}
 
 async function checkEndpoint(
   url: string,
@@ -82,6 +94,7 @@ async function checkEndpoint(
       responseTimeMs,
       statusCode: response.status,
       errorMessage: success ? null : `Received status code ${response.status}`,
+      responseBody: success ? null : normalizeResponseBody(response.data),
     };
   } catch (error) {
     return {
@@ -89,6 +102,7 @@ async function checkEndpoint(
       responseTimeMs: Date.now() - startedAt + jitterMs,
       statusCode: null,
       errorMessage: getErrorMessage(error),
+      responseBody: axios.isAxiosError(error) ? normalizeResponseBody(error.response?.data) : null,
     };
   }
 }
@@ -374,6 +388,34 @@ async function createMonitorEventLog(params: {
   });
 }
 
+async function createApiStatusLog(params: {
+  userId: string;
+  monitorId: Types.ObjectId;
+  endpoint: string;
+  state: "UP" | "DOWN";
+  statusCode: number | null;
+  errorMessage: string | null;
+  responseBody: string | null;
+  responseTimeMs: number | null;
+  region: MonitorRegion;
+  checkedAt: Date;
+}) {
+  await ApiLog.create({
+    userId: params.userId,
+    repositoryId: null,
+    monitorId: params.monitorId,
+    endpoint: params.endpoint,
+    method: "GET",
+    state: params.state,
+    errorMessage: params.errorMessage,
+    statusCode: params.statusCode,
+    responseBody: params.responseBody,
+    latencyMs: params.responseTimeMs,
+    region: params.region,
+    timestamp: params.checkedAt,
+  });
+}
+
 export type RunMonitorCheckOptions = {
   requestTimeoutMs?: number;
   region?: MonitorRegion;
@@ -461,6 +503,21 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     checkedAt,
   }).catch((error) => {
     console.warn("[monitoring] status log failed", error);
+  });
+
+  await createApiStatusLog({
+    userId: monitor.userId,
+    monitorId: monitor._id,
+    endpoint: monitor.url,
+    state: result.success ? "UP" : "DOWN",
+    statusCode: result.statusCode,
+    errorMessage: result.errorMessage,
+    responseBody: result.responseBody,
+    responseTimeMs: result.responseTimeMs,
+    region,
+    checkedAt,
+  }).catch((error) => {
+    console.warn("[monitoring] api status log failed", error);
   });
 
   const openIncidentDoc = await Incident.findOne({

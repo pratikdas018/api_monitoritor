@@ -75,6 +75,33 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <StatCard label="Avg Latency" value={`${stats.avgLatencyMs} ms`} tone="info" />
       </section>
 
+      <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <Link
+          href="/repos"
+          className="rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 transition hover:border-sky-400/60 hover:bg-slate-900"
+        >
+          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">GitHub Analyzer</p>
+          <p className="mt-2 text-lg font-semibold text-slate-100">Repositories</p>
+          <p className="mt-1 text-sm text-slate-400">Scan repository backend files and store snippets.</p>
+        </Link>
+        <Link
+          href="/monitor"
+          className="rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 transition hover:border-sky-400/60 hover:bg-slate-900"
+        >
+          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Failure Signals</p>
+          <p className="mt-2 text-lg font-semibold text-slate-100">API Monitor Logs</p>
+          <p className="mt-1 text-sm text-slate-400">View recent UP/DOWN status logs and error details.</p>
+        </Link>
+        <Link
+          href="/analysis"
+          className="rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 transition hover:border-sky-400/60 hover:bg-slate-900"
+        >
+          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">AI Debugging</p>
+          <p className="mt-2 text-lg font-semibold text-slate-100">Analysis Reports</p>
+          <p className="mt-1 text-sm text-slate-400">Root cause, fixes, and probable file suggestions.</p>
+        </Link>
+      </section>
+
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <MonitorCreateForm projects={projects} activeProjectId={activeProjectId} />
         <ProjectCreateForm />
