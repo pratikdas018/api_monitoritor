@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
+import { useSession } from "next-auth/react";
 
 import { UserMenu } from "@/components/UserMenu";
-import { USER_ID_COOKIE_NAME } from "@/lib/auth";
-import { auth } from "@/lib/firebase";
 
 type NavbarProps = {
-  userId: string | null;
   githubUrl?: string;
 };
 
@@ -26,11 +23,17 @@ function normalizePath(pathname: string | null) {
   return pathname.replace(/\/+$/, "");
 }
 
-export function Navbar({ userId, githubUrl }: NavbarProps) {
+export function Navbar({ githubUrl }: NavbarProps) {
   const pathname = usePathname();
   const isAdminPath = pathname?.startsWith("/admin");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [resolvedUserId, setResolvedUserId] = useState<string | null>(userId);
+  const { data: session, status } = useSession();
+
+  const sessionLabel =
+    session?.user?.name?.trim() ||
+    session?.user?.email?.trim() ||
+    session?.user?.id?.trim() ||
+    null;
 
   const navItems = useMemo<NavItem[]>(
     () => [
@@ -38,74 +41,16 @@ export function Navbar({ userId, githubUrl }: NavbarProps) {
       { label: "Dashboard", href: "/dashboard" },
       { label: "Status Page", href: "/status" },
       { label: "Incidents", href: "/incidents" },
-      { label: "GitHub", href: githubUrl ?? "https://github.com/pratikdas018/api_monitoritor", external: true },
+      {
+        label: "GitHub",
+        href: githubUrl ?? "https://github.com/pratikdas018/api_monitoritor",
+        external: true,
+      },
     ],
     [githubUrl],
   );
 
   const currentPath = normalizePath(pathname);
-
-  useEffect(() => {
-    if (userId) {
-      setResolvedUserId(userId);
-      return;
-    }
-
-    const cookieUserId = (() => {
-      const key = `${USER_ID_COOKIE_NAME}=`;
-      const cookieEntry = document.cookie
-        .split(";")
-        .map((entry) => entry.trim())
-        .find((entry) => entry.startsWith(key));
-
-      if (!cookieEntry) return null;
-
-      const raw = cookieEntry.slice(key.length).trim();
-      if (!raw) return null;
-
-      try {
-        return decodeURIComponent(raw);
-      } catch {
-        return raw;
-      }
-    })();
-
-    if (cookieUserId) {
-      setResolvedUserId(cookieUserId);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser?.uid) {
-        setResolvedUserId(firebaseUser.uid);
-        return;
-      }
-
-      const key = `${USER_ID_COOKIE_NAME}=`;
-      const cookieEntry = document.cookie
-        .split(";")
-        .map((entry) => entry.trim())
-        .find((entry) => entry.startsWith(key));
-
-      if (cookieEntry) {
-        const raw = cookieEntry.slice(key.length).trim();
-        if (raw) {
-          try {
-            setResolvedUserId(decodeURIComponent(raw));
-            return;
-          } catch {
-            setResolvedUserId(raw);
-            return;
-          }
-        }
-      }
-
-      setResolvedUserId(userId ?? null);
-    });
-
-    return () => unsubscribe();
-  }, [userId]);
 
   if (isAdminPath) {
     return null;
@@ -160,8 +105,12 @@ export function Navbar({ userId, githubUrl }: NavbarProps) {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          {resolvedUserId ? (
-            <UserMenu userId={resolvedUserId} />
+          {status === "loading" ? (
+            <span className="rounded-xl border border-slate-700/80 bg-slate-900/70 px-3 py-2 text-xs text-slate-400">
+              Loading...
+            </span>
+          ) : sessionLabel ? (
+            <UserMenu />
           ) : (
             <Link href="/login" className="btn-soft">
               Login
@@ -176,7 +125,7 @@ export function Navbar({ userId, githubUrl }: NavbarProps) {
           aria-label="Toggle mobile menu"
           aria-expanded={mobileOpen}
         >
-          <span className="text-lg leading-none">{mobileOpen ? "x" : "≡"}</span>
+          <span className="text-lg leading-none">{mobileOpen ? "x" : "="}</span>
         </button>
       </nav>
 
@@ -212,10 +161,10 @@ export function Navbar({ userId, githubUrl }: NavbarProps) {
             })}
 
             <div className="mt-2 border-t border-slate-800/80 pt-2">
-              {resolvedUserId ? (
+              {sessionLabel ? (
                 <div className="flex items-center justify-between rounded-xl border border-slate-700/80 bg-slate-900/70 px-3 py-2">
-                  <p className="max-w-[70%] truncate text-xs text-slate-300">{resolvedUserId}</p>
-                  <UserMenu userId={resolvedUserId} />
+                  <p className="max-w-[70%] truncate text-xs text-slate-300">{sessionLabel}</p>
+                  <UserMenu />
                 </div>
               ) : (
                 <Link

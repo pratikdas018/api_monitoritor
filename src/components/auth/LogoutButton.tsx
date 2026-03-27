@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
-
-import { auth } from "@/lib/firebase";
+import { signOut } from "next-auth/react";
 
 export function LogoutButton() {
   const router = useRouter();
@@ -13,13 +11,8 @@ export function LogoutButton() {
   const handleLogout = async () => {
     try {
       setLoading(true);
-
-      // Sign out Firebase session if present.
-      await signOut(auth).catch(() => {});
-
-      // Clear app auth cookie used by middleware.
-      await fetch("/api/auth/logout", {
-        method: "POST",
+      await signOut({
+        callbackUrl: "/login",
       });
 
       router.replace("/login");

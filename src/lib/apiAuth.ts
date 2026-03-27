@@ -1,32 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Session } from "next-auth";
 
-import { SESSION_COOKIE_NAME, USER_EMAIL_COOKIE_NAME, USER_ID_COOKIE_NAME } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 
-export function getCurrentUserIdFromRequest(request: NextRequest) {
-  const sessionValue = request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "";
-  if (!sessionValue) return null;
-
-  const cookieUserIdRaw = request.cookies.get(USER_ID_COOKIE_NAME)?.value ?? "";
-  const cookieUserId = (() => {
-    try {
-      return decodeURIComponent(cookieUserIdRaw).trim();
-    } catch {
-      return cookieUserIdRaw.trim();
-    }
-  })();
-
-  if (!cookieUserId) return null;
-
-  const headerUserId = request.headers.get("x-user-id")?.trim();
-  if (headerUserId && cookieUserId !== headerUserId) {
-    return null;
-  }
-
-  return cookieUserId;
+function normalizeEmail(value: string | null | undefined) {
+  if (!value) return null;
+  const trimmed = value.trim().toLowerCase();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
-export function requireUserId(request: NextRequest) {
-  const userId = getCurrentUserIdFromRequest(request);
+function resolveSessionUserId(session: Session | null) {
+  if (!session?.user) return null;
+
+  // We use email as the application tenant key for monitor/project ownership.
+  const email = normalizeEmail(session.user.email);
+  if (email) return email;
+
+  const fallbackId = session.user.id?.trim();
+  return fallbackId && fallbackId.length > 0 ? fallbackId : null;
+}
+
+export async function getCurrentUserIdFromRequest(request: NextRequest) {
+  void request;
+  const session = await auth();
+  return resolveSessionUserId(session);
+}
+
+export async function requireUserId(request: NextRequest) {
+  const userId = await getCurrentUserIdFromRequest(request);
   if (!userId) {
     return {
       userId: null,
@@ -48,27 +49,8 @@ export function ensurePayloadUserMatch(payloadUserId: unknown, currentUserId: st
   return null;
 }
 
-function looksLikeEmail(value: string) {
-  const trimmed = value.trim();
-  if (trimmed.length < 6 || trimmed.length > 254) return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
-}
-
-export function getCurrentUserEmailFromRequest(request: NextRequest) {
-  const sessionValue = request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "";
-  if (!sessionValue) return null;
-
-  const rawEmail = request.cookies.get(USER_EMAIL_COOKIE_NAME)?.value ?? "";
-  let email = rawEmail.trim();
-  try {
-    email = decodeURIComponent(email).trim();
-  } catch {
-    // Keep raw if decode fails.
-  }
-
-  if (!looksLikeEmail(email)) {
-    return null;
-  }
-
-  return email.toLowerCase();
+export async function getCurrentUserEmailFromRequest(request: NextRequest) {
+  void request;
+  const session = await auth();
+  return normalizeEmail(session?.user?.email);
 }

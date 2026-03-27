@@ -1,16 +1,23 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { GoogleAuthPanel } from "@/components/login/GoogleAuthPanel";
-import { LoginForm } from "@/components/login/LoginForm";
+import { SocialLoginCard } from "@/components/login/SocialLoginCard";
+import { auth } from "@/lib/auth";
 
 type LoginPageProps = {
   searchParams?: {
     next?: string;
+    error?: string;
   };
 };
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const session = await auth();
+  if (session?.user) {
+    redirect(searchParams?.next?.startsWith("/") ? searchParams.next : "/dashboard");
+  }
+
   const nextPath = searchParams?.next ?? "/dashboard";
+  const error = searchParams?.error;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-10">
@@ -45,34 +52,9 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
                 <p className="mt-2 text-sm font-medium text-slate-200">Latency and uptime insights</p>
               </article>
             </div>
-
-            <p className="mt-6 text-xs text-slate-500">
-              Need platform overview?{" "}
-              <Link href="/" className="font-medium text-sky-300 hover:text-sky-200">
-                Go to Landing Page
-              </Link>
-            </p>
           </aside>
 
-          <section className="glass-panel rounded-2xl p-6 sm:p-7">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Login</p>
-            <h2 className="mt-2 text-3xl font-semibold text-slate-100">API Monitor Platform</h2>
-            <p className="mt-2 text-sm text-slate-400">
-              Continue with email/password or your Google account.
-            </p>
-
-            <div className="mt-6">
-              <LoginForm nextPath={nextPath} />
-            </div>
-
-            <div className="my-5 flex items-center gap-3">
-              <span className="h-px flex-1 bg-slate-700/70" />
-              <span className="text-xs uppercase tracking-[0.18em] text-slate-500">or</span>
-              <span className="h-px flex-1 bg-slate-700/70" />
-            </div>
-
-            <GoogleAuthPanel nextPath={nextPath} />
-          </section>
+          <SocialLoginCard nextPath={nextPath} error={error} />
         </div>
       </section>
     </main>

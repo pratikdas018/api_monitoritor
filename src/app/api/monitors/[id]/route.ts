@@ -30,7 +30,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = requireUserId(request);
+  const auth = await requireUserId(request);
   if (auth.error) {
     return auth.error;
   }
@@ -68,7 +68,7 @@ export async function PATCH(
   const { ipAddress, userAgent } = getRequestContext(request);
   await recordActivity({
     userId: auth.userId as string,
-    userEmail: getCurrentUserEmailFromRequest(request),
+    userEmail: await getCurrentUserEmailFromRequest(request),
     role: "user",
     action: "update_api_monitor",
     targetType: "monitor",
@@ -85,7 +85,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const auth = requireUserId(request);
+  const auth = await requireUserId(request);
   if (auth.error) {
     return auth.error;
   }
@@ -113,7 +113,7 @@ export async function DELETE(
   const { ipAddress, userAgent } = getRequestContext(request);
   await recordActivity({
     userId: auth.userId as string,
-    userEmail: getCurrentUserEmailFromRequest(request),
+    userEmail: await getCurrentUserEmailFromRequest(request),
     role: "user",
     action: "delete_api_monitor",
     targetType: "monitor",

@@ -6,7 +6,7 @@ import { getIncidents } from "@/lib/queries";
 import { getSessionUserId } from "@/lib/serverSession";
 
 export default async function IncidentsPage() {
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
   if (!userId) {
     redirect("/login?next=/incidents");
   }

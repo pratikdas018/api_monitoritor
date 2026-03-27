@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
-    const auth = requireUserId(request);
+    const auth = await requireUserId(request);
     if (auth.error) {
       return auth.error;
     }

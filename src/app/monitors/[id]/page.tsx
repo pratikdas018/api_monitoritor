@@ -20,7 +20,7 @@ export default async function MonitorDetailPage({ params, searchParams }: Monito
   const resolvedSearchParams = await Promise.resolve(searchParams);
   const monitorId = resolvedParams.id;
   const range = resolvedSearchParams?.range ?? "24h";
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
 
   if (!userId) {
     notFound();

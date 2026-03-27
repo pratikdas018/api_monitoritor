@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ projects: [] }, { status: 200 });
     }
 
-    const auth = requireUserId(request);
+    const auth = await requireUserId(request);
     if (auth.error) {
       return auth.error;
     }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Database is not configured." }, { status: 503 });
     }
 
-    const auth = requireUserId(request);
+    const auth = await requireUserId(request);
     if (auth.error) {
       return auth.error;
     }

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ monitors: [] }, { status: 200 });
     }
 
-    const auth = requireUserId(request);
+    const auth = await requireUserId(request);
     if (auth.error) {
       return auth.error;
     }
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = requireUserId(request);
+    const auth = await requireUserId(request);
     if (auth.error) {
       return auth.error;
     }
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const currentUserEmail = getCurrentUserEmailFromRequest(request);
+    const currentUserEmail = await getCurrentUserEmailFromRequest(request);
     if (currentUserEmail) {
       await upsertUserProfile({
         authId: auth.userId as string,

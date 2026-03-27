@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 
 import { getSessionUserId } from "@/lib/serverSession";
 
-export default function ProfilePage() {
-  const userId = getSessionUserId();
+export default async function ProfilePage() {
+  const userId = await getSessionUserId();
   if (!userId) {
     redirect("/login?next=/profile");
   }

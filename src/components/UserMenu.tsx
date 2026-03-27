@@ -3,23 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { signOut, useSession } from "next-auth/react";
 
-import { auth } from "@/lib/firebase";
-import { USER_EMAIL_COOKIE_NAME, USER_SESSION_INACTIVITY_SECONDS } from "@/lib/auth";
-
-type UserMenuProps = {
-  userId: string;
-};
-
-type FirebaseProfile = {
-  photoUrl: string;
-  email: string;
-  name: string;
-};
-
-function getInitials(userId: string) {
-  const clean = userId.trim();
+function getInitials(value: string) {
+  const clean = value.trim();
   if (!clean) return "U";
   const parts = clean.split(/[\s._-]+/g).filter(Boolean);
   if (parts.length === 0) return clean.slice(0, 1).toUpperCase();
@@ -27,52 +14,21 @@ function getInitials(userId: string) {
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 }
 
-export function UserMenu({ userId }: UserMenuProps) {
+export function UserMenu() {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const didSyncRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<FirebaseProfile | null>(null);
+  const { data: session } = useSession();
 
-  const label = profile?.email || profile?.name || userId;
-  const initials = useMemo(() => getInitials(label), [label]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        if (!user) {
-          setProfile(null);
-          return;
-        }
-
-        setProfile({
-          photoUrl: user.photoURL ?? "",
-          email: user.email ?? "",
-          name: user.displayName ?? "",
-        });
-      },
-      () => {
-        setProfile(null);
-      },
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (didSyncRef.current) return;
-    if (!profile?.email) return;
-
-    const encoded = encodeURIComponent(profile.email);
-    document.cookie = `${USER_EMAIL_COOKIE_NAME}=${encoded}; path=/; max-age=${USER_SESSION_INACTIVITY_SECONDS}; samesite=lax`;
-
-    didSyncRef.current = true;
-    fetch("/api/auth/sync", { method: "POST" }).catch(() => {
-      // Best-effort: alerts still work via configured email channels.
-    });
-  }, [profile?.email]);
+  const displayName =
+    session?.user?.name?.trim() ||
+    session?.user?.email?.trim() ||
+    session?.user?.id?.trim() ||
+    "User";
+  const displayEmail = session?.user?.email?.trim() || "No email";
+  const avatarUrl = session?.user?.image || "";
+  const initials = useMemo(() => getInitials(displayName), [displayName]);
 
   useEffect(() => {
     function onClickOutside(event: MouseEvent) {
@@ -88,8 +44,9 @@ export function UserMenu({ userId }: UserMenuProps) {
   async function handleLogout() {
     try {
       setLoading(true);
-      await signOut(auth).catch(() => {});
-      await fetch("/api/auth/logout", { method: "POST" });
+      await signOut({
+        callbackUrl: "/login",
+      });
       setOpen(false);
       router.replace("/login");
       router.refresh();
@@ -109,11 +66,11 @@ export function UserMenu({ userId }: UserMenuProps) {
         aria-label="Open user menu"
       >
         <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-sky-400/40 bg-sky-500/15 text-xs font-semibold text-sky-200">
-          {profile?.photoUrl ? (
+          {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={profile.photoUrl}
-              alt={profile.name || profile.email || "User avatar"}
+              src={avatarUrl}
+              alt={displayName || "User avatar"}
               className="h-full w-full object-cover"
               referrerPolicy="no-referrer"
             />
@@ -122,7 +79,7 @@ export function UserMenu({ userId }: UserMenuProps) {
           )}
         </span>
         <span className="hidden max-w-[150px] truncate text-xs text-slate-300 sm:inline">
-          {label}
+          {displayName}
         </span>
       </button>
 
@@ -132,6 +89,10 @@ export function UserMenu({ userId }: UserMenuProps) {
           aria-label="User menu"
           className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-700/80 bg-slate-950/95 p-1.5 shadow-2xl shadow-slate-950/70"
         >
+          <div className="mb-1 rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-2">
+            <p className="truncate text-xs font-semibold text-slate-100">{displayName}</p>
+            <p className="truncate text-[11px] text-slate-400">{displayEmail}</p>
+          </div>
           <Link
             href="/dashboard"
             className="block rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800/80 hover:text-sky-200"

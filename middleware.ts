@@ -1,64 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/adminAuth";
-import {
-  SESSION_COOKIE_NAME,
-  USER_EMAIL_COOKIE_NAME,
-  USER_ID_COOKIE_NAME,
-  USER_SESSION_INACTIVITY_SECONDS,
-} from "@/lib/auth";
 
-function looksLikeEmail(value: string) {
-  const trimmed = value.trim();
-  if (trimmed.length < 6 || trimmed.length > 254) return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+function isUserApiRoute(pathname: string) {
+  return (
+    pathname.startsWith("/api/monitors") ||
+    pathname.startsWith("/api/projects") ||
+    pathname.startsWith("/api/incidents") ||
+    pathname.startsWith("/api/status") ||
+    pathname.startsWith("/api/history")
+  );
 }
 
-function getUserCookieOptions(request: NextRequest) {
-  return {
-    path: "/",
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production" || request.nextUrl.protocol === "https:",
-    maxAge: USER_SESSION_INACTIVITY_SECONDS,
-  };
-}
-
-function clearUserCookies(response: NextResponse) {
-  response.cookies.set(SESSION_COOKIE_NAME, "", { path: "/", maxAge: 0 });
-  response.cookies.set(USER_ID_COOKIE_NAME, "", { path: "/", maxAge: 0 });
-  response.cookies.set(USER_EMAIL_COOKIE_NAME, "", { path: "/", maxAge: 0 });
-  return response;
-}
-
-function withRefreshedUserSession(
-  request: NextRequest,
-  response: NextResponse,
-  userId: string,
-) {
-  const options = getUserCookieOptions(request);
-  response.cookies.set(SESSION_COOKIE_NAME, "authenticated", {
-    ...options,
-    httpOnly: true,
-  });
-  response.cookies.set(USER_ID_COOKIE_NAME, encodeURIComponent(userId), {
-    ...options,
-    httpOnly: false,
-  });
-
-  const currentEmailCookie = request.cookies.get(USER_EMAIL_COOKIE_NAME)?.value ?? "";
-  if (currentEmailCookie) {
-    response.cookies.set(USER_EMAIL_COOKIE_NAME, currentEmailCookie, {
-      ...options,
-      httpOnly: false,
-    });
-  } else if (looksLikeEmail(userId)) {
-    response.cookies.set(USER_EMAIL_COOKIE_NAME, encodeURIComponent(userId.toLowerCase()), {
-      ...options,
-      httpOnly: false,
-    });
-  }
-
-  return response;
+function isProtectedUserPage(pathname: string) {
+  return (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/incidents") ||
+    pathname.startsWith("/monitors") ||
+    pathname.startsWith("/status")
+  );
 }
 
 export async function middleware(request: NextRequest) {
@@ -92,57 +54,41 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(adminLoginUrl);
   }
 
-  const sessionValue = request.cookies.get(SESSION_COOKIE_NAME)?.value ?? "";
-  const isAuthenticated = Boolean(sessionValue);
-  const cookieUserIdRaw = request.cookies.get(USER_ID_COOKIE_NAME)?.value ?? "";
-  const cookieUserId = (() => {
-    try {
-      return decodeURIComponent(cookieUserIdRaw).trim();
-    } catch {
-      return cookieUserIdRaw.trim();
-    }
-  })();
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-  // API authorization middleware for user-isolated resources.
-  if (
-    pathname.startsWith("/api/monitors") ||
-    pathname.startsWith("/api/projects") ||
-    pathname.startsWith("/api/incidents") ||
-    pathname.startsWith("/api/status") ||
-    pathname.startsWith("/api/history")
-  ) {
-    if (!isAuthenticated || !cookieUserId) {
-      return clearUserCookies(NextResponse.json(
-        { error: "Unauthorized: login required" },
-        { status: 401 },
-      ));
-    }
-
-    const headerUserId = request.headers.get("x-user-id")?.trim();
-    if (headerUserId && cookieUserId !== headerUserId) {
-      return NextResponse.json(
-        { error: "Unauthorized: user mismatch" },
-        { status: 403 },
-      );
-    }
-    return withRefreshedUserSession(request, NextResponse.next(), cookieUserId);
+  if (pathname === "/login" && token) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (isAuthenticated && cookieUserId) {
-    return withRefreshedUserSession(request, NextResponse.next(), cookieUserId);
+  if (!isProtectedUserPage(pathname) && !isUserApiRoute(pathname)) {
+    return NextResponse.next();
   }
 
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
-  return clearUserCookies(NextResponse.redirect(loginUrl));
+  if (!token) {
+    if (isUserApiRoute(pathname)) {
+      return NextResponse.json({ error: "Unauthorized: login required" }, { status: 401 });
+    }
+
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", pathname + request.nextUrl.search);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
+    "/login",
     "/admin/:path*",
     "/api/admin/:path*",
     "/dashboard/:path*",
     "/profile/:path*",
+    "/incidents/:path*",
+    "/monitors/:path*",
     "/status/:path*",
     "/api/monitors/:path*",
     "/api/projects/:path*",

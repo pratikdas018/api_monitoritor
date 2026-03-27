@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
-import { getSessionUserId } from "@/lib/serverSession";
+import { AuthSessionProvider } from "@/components/providers/AuthSessionProvider";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -32,7 +32,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const userId = getSessionUserId();
   const githubUrl = process.env.NEXT_PUBLIC_GITHUB_URL ?? "https://github.com/pratikdas018/api_monitoritor";
 
   return (
@@ -40,11 +39,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
-        <div className="flex min-h-screen flex-col">
-          <Navbar userId={userId} githubUrl={githubUrl} />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </div>
+        <AuthSessionProvider>
+          <div className="flex min-h-screen flex-col">
+            <Navbar githubUrl={githubUrl} />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+        </AuthSessionProvider>
       </body>
     </html>
   );

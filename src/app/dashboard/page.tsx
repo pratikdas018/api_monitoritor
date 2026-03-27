@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AlertChannelSettings } from "@/components/AlertChannelSettings";
-import { LogoutButton } from "@/components/auth/LogoutButton";
+import { SessionUserPanel } from "@/components/auth/SessionUserPanel";
 import { IncidentTimeline } from "@/components/IncidentTimeline";
 import { LatencyChart } from "@/components/LatencyChart";
 import { MonitorCreateForm } from "@/components/MonitorCreateForm";
@@ -22,7 +22,7 @@ type DashboardPageProps = {
 };
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
   if (!userId) {
     redirect("/login?next=/dashboard");
   }
@@ -57,7 +57,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <Link href="/incidents" className="btn-soft">
               Incidents
             </Link>
-            <LogoutButton />
+            <SessionUserPanel />
           </nav>
         </div>
       </header>

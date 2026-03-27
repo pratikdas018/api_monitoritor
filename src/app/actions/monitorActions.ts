@@ -110,8 +110,8 @@ export async function createMonitorAction(
   _prevState: MonitorActionState,
   formData: FormData,
 ): Promise<MonitorActionState> {
-  const userId = getSessionUserId();
-  const ownerEmail = getSessionUserEmail();
+  const userId = await getSessionUserId();
+  const ownerEmail = await getSessionUserEmail();
   if (!userId) {
     return {
       status: "error",
@@ -206,7 +206,7 @@ export async function createProjectAction(
     };
   }
 
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
   if (!userId) {
     return {
       status: "error" as const,
@@ -230,7 +230,7 @@ export async function createProjectAction(
     await createProject(parsed.data, userId);
     await recordActivity({
       userId,
-      userEmail: getSessionUserEmail(),
+      userEmail: await getSessionUserEmail(),
       role: "user",
       action: "create_project",
       targetType: "project",
@@ -270,7 +270,7 @@ export async function createAlertChannelAction(
   _prevState: MonitorActionState,
   formData: FormData,
 ): Promise<MonitorActionState> {
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
   if (!userId) {
     return {
       status: "error" as const,
@@ -300,7 +300,7 @@ export async function createAlertChannelAction(
     await createAlertChannel({ ...parsed.data, userId });
     await recordActivity({
       userId,
-      userEmail: getSessionUserEmail(),
+      userEmail: await getSessionUserEmail(),
       role: "user",
       action: "create_alert_channel",
       targetType: "alert_channel",
@@ -322,7 +322,7 @@ export async function createAlertChannelAction(
 }
 
 export async function toggleMonitorStatusAction(monitorId: string) {
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
   if (!userId) return;
 
   try {
@@ -343,7 +343,7 @@ export async function runMonitorNowAction(monitorId: string) {
   if (!Types.ObjectId.isValid(monitorId)) {
     return;
   }
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
   if (!userId) return;
 
   try {
@@ -362,7 +362,7 @@ export async function runMonitorNowAction(monitorId: string) {
 }
 
 export async function resolveIncidentAction(incidentId: string) {
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
   if (!userId) return;
 
   try {

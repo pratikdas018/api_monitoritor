@@ -33,7 +33,7 @@ function averageLatency(
 }
 
 export default async function StatusPage() {
-  const userId = getSessionUserId();
+  const userId = await getSessionUserId();
   if (!userId) {
     redirect("/login?next=/status");
   }
