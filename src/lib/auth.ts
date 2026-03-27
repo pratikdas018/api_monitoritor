@@ -38,13 +38,57 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
+function normalizeBaseUrl(url: string) {
+  return url.trim().replace(/\/+$/, "");
+}
+
+function resolveAuthBaseUrl() {
+  const explicit = process.env.NEXTAUTH_URL?.trim() || process.env.AUTH_URL?.trim() || "";
+  const normalizedExplicit = explicit ? normalizeBaseUrl(explicit) : "";
+  const isProduction = process.env.NODE_ENV === "production";
+  const hasLocalhost =
+    normalizedExplicit.includes("localhost") || normalizedExplicit.includes("127.0.0.1");
+
+  // In production, prefer explicit non-localhost value.
+  if (isProduction && normalizedExplicit && !hasLocalhost) {
+    return normalizedExplicit;
+  }
+
+  // Vercel stable production domain is safest for OAuth callbacks.
+  const vercelProduction = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() || "";
+  if (isProduction && vercelProduction) {
+    return `https://${normalizeBaseUrl(vercelProduction).replace(/^https?:\/\//, "")}`;
+  }
+
+  // Fallback to current Vercel deployment domain.
+  const vercelRuntime = process.env.VERCEL_URL?.trim() || "";
+  if (isProduction && vercelRuntime) {
+    return `https://${normalizeBaseUrl(vercelRuntime).replace(/^https?:\/\//, "")}`;
+  }
+
+  if (normalizedExplicit) {
+    return normalizedExplicit;
+  }
+
+  return "http://localhost:3000";
+}
+
+const resolvedAuthBaseUrl = resolveAuthBaseUrl();
+if (resolvedAuthBaseUrl && process.env.NEXTAUTH_URL !== resolvedAuthBaseUrl) {
+  process.env.NEXTAUTH_URL = resolvedAuthBaseUrl;
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // Route users to our custom App Router login page.
   pages: {
     signIn: "/login",
     error: "/login",
   },
+  // Use request host/proxy headers safely on Vercel and reverse proxies.
+  trustHost: true,
   secret: readEnv("NEXTAUTH_SECRET"),
+  // Ensure secure auth cookies in production.
+  useSecureCookies: process.env.NODE_ENV === "production",
   // JWT sessions work well with App Router, middleware, and server actions.
   session: {
     strategy: "jwt",
