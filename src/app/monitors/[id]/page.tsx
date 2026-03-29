@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { IncidentTimeline } from "@/components/IncidentTimeline";
@@ -49,15 +49,15 @@ export default async function MonitorDetailPage({ params, searchParams }: Monito
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 md:px-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Monitor Detail</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-100">{monitor.name}</h1>
-          <p className="mt-1 text-sm text-slate-400">{monitor.url}</p>
+          <p className="text-sm uppercase tracking-[0.2em] text-text-muted">Monitor Detail</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-text-primary">{monitor.name}</h1>
+          <p className="mt-1 text-sm text-text-secondary">{monitor.url}</p>
         </div>
         <div className="flex gap-2">
           <StatusBadge status={monitor.status} />
           <Link
             href="/dashboard"
-            className="rounded-md border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:text-sky-300"
+            className="btn-ghost px-3 py-2 text-sm font-medium"
           >
             Dashboard
           </Link>
@@ -65,27 +65,27 @@ export default async function MonitorDetailPage({ params, searchParams }: Monito
       </header>
 
       <section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <p className="text-sm text-slate-500">Last Latency</p>
-          <p className="mt-2 text-xl font-semibold text-slate-100">
+        <article className="glass-card rounded-xl border p-4">
+          <p className="text-sm text-text-muted">Last Latency</p>
+          <p className="mt-2 text-xl font-semibold text-text-primary">
             {formatDurationMs(monitor.lastResponseTimeMs)}
           </p>
         </article>
-        <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <p className="text-sm text-slate-500">Uptime</p>
-          <p className="mt-2 text-xl font-semibold text-slate-100">
+        <article className="glass-card rounded-xl border p-4">
+          <p className="text-sm text-text-muted">Uptime</p>
+          <p className="mt-2 text-xl font-semibold text-text-primary">
             {formatUptime(monitor.uptimePercentage)}
           </p>
         </article>
-        <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <p className="text-sm text-slate-500">Last Check</p>
-          <p className="mt-2 text-xl font-semibold text-slate-100">
+        <article className="glass-card rounded-xl border p-4">
+          <p className="text-sm text-text-muted">Last Check</p>
+          <p className="mt-2 text-xl font-semibold text-text-primary">
             {formatDateTime(monitor.lastCheckedAt)}
           </p>
         </article>
-        <article className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <p className="text-sm text-slate-500">Interval</p>
-          <p className="mt-2 text-xl font-semibold text-slate-100">
+        <article className="glass-card rounded-xl border p-4">
+          <p className="text-sm text-text-muted">Interval</p>
+          <p className="mt-2 text-xl font-semibold text-text-primary">
             {monitor.intervalMinutes} min
           </p>
         </article>
@@ -93,7 +93,7 @@ export default async function MonitorDetailPage({ params, searchParams }: Monito
 
       <section className="mb-6 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-100">Latency History ({range})</h2>
+          <h2 className="text-lg font-semibold text-text-primary">Latency History ({range})</h2>
           <div className="flex items-center gap-2 text-xs">
             <Link href={`/monitors/${monitor.id}?range=24h`} className="btn-soft">24h</Link>
             <Link href={`/monitors/${monitor.id}?range=7d`} className="btn-soft">7d</Link>
@@ -104,7 +104,7 @@ export default async function MonitorDetailPage({ params, searchParams }: Monito
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-100">Monitor Incidents</h2>
+        <h2 className="text-lg font-semibold text-text-primary">Monitor Incidents</h2>
         <IncidentTimeline incidents={incidents} />
       </section>
     </main>

@@ -34,16 +34,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1400px] flex-col gap-6 px-4 py-6 sm:px-6 md:gap-7 md:px-8 lg:px-10 xl:py-8">
-      <header className="glass-panel rounded-2xl p-5 md:p-6">
+      <header className="glass-card rounded-2xl border p-5 md:p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
+            <p className="text-xs uppercase tracking-[0.24em] text-text-muted">
               API Monitoring Platform
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl">
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-text-primary sm:text-4xl">
               Dashboard
             </h1>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-text-secondary">
               Real-time uptime, incidents, and latency telemetry.
             </p>
             <div className="mt-3">
@@ -78,27 +78,27 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <Link
           href="/repos"
-          className="rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 transition hover:border-sky-400/60 hover:bg-slate-900"
+          className="glass-card card-interactive rounded-xl border p-4"
         >
-          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">GitHub Analyzer</p>
-          <p className="mt-2 text-lg font-semibold text-slate-100">Repositories</p>
-          <p className="mt-1 text-sm text-slate-400">Scan repository backend files and store snippets.</p>
+          <p className="text-xs uppercase tracking-[0.12em] text-text-muted">GitHub Analyzer</p>
+          <p className="mt-2 text-lg font-semibold text-text-primary">Repositories</p>
+          <p className="mt-1 text-sm text-text-secondary">Scan repository backend files and store snippets.</p>
         </Link>
         <Link
           href="/monitor"
-          className="rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 transition hover:border-sky-400/60 hover:bg-slate-900"
+          className="glass-card card-interactive rounded-xl border p-4"
         >
-          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Failure Signals</p>
-          <p className="mt-2 text-lg font-semibold text-slate-100">API Monitor Logs</p>
-          <p className="mt-1 text-sm text-slate-400">View recent UP/DOWN status logs and error details.</p>
+          <p className="text-xs uppercase tracking-[0.12em] text-text-muted">Failure Signals</p>
+          <p className="mt-2 text-lg font-semibold text-text-primary">API Monitor Logs</p>
+          <p className="mt-1 text-sm text-text-secondary">View recent UP/DOWN status logs and error details.</p>
         </Link>
         <Link
           href="/analysis"
-          className="rounded-xl border border-slate-700/80 bg-slate-900/70 p-4 transition hover:border-sky-400/60 hover:bg-slate-900"
+          className="glass-card card-interactive rounded-xl border p-4"
         >
-          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">AI Debugging</p>
-          <p className="mt-2 text-lg font-semibold text-slate-100">Analysis Reports</p>
-          <p className="mt-1 text-sm text-slate-400">Root cause, fixes, and probable file suggestions.</p>
+          <p className="text-xs uppercase tracking-[0.12em] text-text-muted">AI Debugging</p>
+          <p className="mt-2 text-lg font-semibold text-text-primary">Analysis Reports</p>
+          <p className="mt-1 text-sm text-text-secondary">Root cause, fixes, and probable file suggestions.</p>
         </Link>
       </section>
 
@@ -110,8 +110,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Monitors</h2>
-            <p className="text-sm text-slate-400">Manage checks, status, and runtime actions.</p>
+            <h2 className="text-lg font-semibold text-text-primary md:text-xl">Monitors</h2>
+            <p className="text-sm text-text-secondary">Manage checks, status, and runtime actions.</p>
           </div>
         </div>
         <MonitorTable monitors={monitors} />
@@ -119,16 +119,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Regional Status</h2>
-          <p className="text-sm text-slate-400">Multi-region check view (India, US, Europe).</p>
+          <h2 className="text-lg font-semibold text-text-primary md:text-xl">Regional Status</h2>
+          <p className="text-sm text-text-secondary">Multi-region check view (India, US, Europe).</p>
         </div>
         <RegionStatusTable monitors={monitors} />
       </section>
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Performance Metrics</h2>
-          <p className="text-sm text-slate-400">
+          <h2 className="text-lg font-semibold text-text-primary md:text-xl">Performance Metrics</h2>
+          <p className="text-sm text-text-secondary">
             Average latency, P95, error rate, status code and uptime trends.
           </p>
         </div>
@@ -139,11 +139,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <div className="space-y-3 lg:col-span-7">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Latency Trend</h2>
-              <p className="text-sm text-slate-400">Performance history per monitor.</p>
+              <h2 className="text-lg font-semibold text-text-primary md:text-xl">Latency Trend</h2>
+              <p className="text-sm text-text-secondary">Performance history per monitor.</p>
             </div>
             {chartMonitor ? (
-              <p className="rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1 text-xs text-slate-300">
+              <p className="rounded-full border border-border-accent bg-accent/10 px-3 py-1 text-xs text-text-secondary">
                 Source: {chartMonitor.name}
               </p>
             ) : null}
@@ -151,7 +151,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           {chartMonitor ? (
             <LatencyChart data={chartMonitor.latencyLogs} />
           ) : (
-            <div className="glass-panel rounded-2xl border-dashed p-6 text-sm text-slate-400">
+            <div className="glass-card rounded-2xl border border-dashed p-6 text-sm text-text-muted">
               Add a monitor to start collecting latency data.
             </div>
           )}
@@ -159,10 +159,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
         <div className="space-y-3 lg:col-span-5">
           <div>
-            <h2 className="text-lg font-semibold text-slate-100 md:text-xl">
+            <h2 className="text-lg font-semibold text-text-primary md:text-xl">
               Recent Incident Timeline
             </h2>
-            <p className="text-sm text-slate-400">Auto-detected failures and recoveries.</p>
+            <p className="text-sm text-text-secondary">Auto-detected failures and recoveries.</p>
           </div>
           <IncidentTimeline incidents={incidents} />
         </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { IncidentHistory } from "@/components/status/IncidentHistory";
@@ -89,15 +89,14 @@ export default async function StatusPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[1300px] px-4 py-6 sm:px-6 md:px-8 lg:px-10 xl:py-8">
-      <header className="glass-panel mb-6 rounded-2xl p-5 md:p-6">
+      <header className="glass-card mb-6 rounded-2xl border p-5 md:p-6">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Public Status</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-100 md:text-4xl">
+          <p className="text-xs uppercase tracking-[0.2em] text-text-muted">Public Status</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-text-primary md:text-4xl">
             API Health Status
           </h1>
-          <p className="mt-2 text-sm text-slate-400">
-            {`Showing monitors for ${userId}.`} Last checked at{" "}
-            {formatDateTime(generatedAt)}.
+          <p className="mt-2 text-sm text-text-secondary">
+            {`Showing monitors for ${userId}.`} Last checked at {formatDateTime(generatedAt)}.
           </p>
         </div>
       </header>
@@ -105,8 +104,8 @@ export default async function StatusPage() {
       <section
         className={`mb-6 rounded-2xl border px-4 py-3 ${
           allOperational
-            ? "border-emerald-400/40 bg-emerald-500/10 text-emerald-200"
-            : "border-amber-400/40 bg-amber-500/10 text-amber-100"
+            ? "border-status-up/40 bg-status-up/10 text-status-up shadow-[0_0_18px_rgba(34,197,94,0.2)]"
+            : "border-status-degraded/40 bg-status-degraded/10 text-status-degraded shadow-[0_0_18px_rgba(234,179,8,0.2)]"
         }`}
       >
         <p className="text-sm font-semibold">
@@ -122,17 +121,17 @@ export default async function StatusPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Monitors</h2>
+        <h2 className="text-lg font-semibold text-text-primary md:text-xl">Monitors</h2>
         <MonitorStatusTable rows={monitorRows} />
       </section>
 
       <section className="mt-6 space-y-3">
-        <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Latency</h2>
+        <h2 className="text-lg font-semibold text-text-primary md:text-xl">Latency</h2>
         <PublicLatencyChart data={dashboardData.metrics.responseTrend} />
       </section>
 
       <section className="mt-6 space-y-3 pb-4">
-        <h2 className="text-lg font-semibold text-slate-100 md:text-xl">Recent Incident History</h2>
+        <h2 className="text-lg font-semibold text-text-primary md:text-xl">Recent Incident History</h2>
         <IncidentHistory incidents={incidents} />
       </section>
     </main>

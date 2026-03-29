@@ -38,45 +38,47 @@ export function LatencyChart({ data }: LatencyChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <div className="glass-panel rounded-2xl border-dashed p-6 text-sm text-slate-400">
+      <div className="glass-card rounded-2xl border border-dashed p-6 text-sm text-text-muted">
         Not enough latency samples yet.
       </div>
     );
   }
 
   return (
-    <div className="glass-panel rounded-2xl p-4 md:p-5">
+    <div className="glass-card rounded-2xl border p-4 md:p-5">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-200">Response Time (last 60 checks)</p>
-        <span className="rounded-full border border-slate-700 bg-slate-900/70 px-2.5 py-1 text-xs text-slate-300">
+        <p className="text-sm font-semibold text-text-secondary">Response Time (last 60 checks)</p>
+        <span className="rounded-full border border-border-accent bg-accent/10 px-2.5 py-1 text-xs text-text-secondary">
           ms
         </span>
       </div>
       <div className="h-72 w-full md:h-80">
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-        <LineChart data={chartData}>
-          <CartesianGrid stroke="#1e293b" strokeDasharray="3 5" />
-          <XAxis dataKey="time" stroke="#94a3b8" tickLine={false} axisLine={false} />
-          <YAxis stroke="#94a3b8" tickLine={false} axisLine={false} width={44} />
-          <Tooltip
-            contentStyle={{
-              background: "rgba(2, 6, 23, 0.95)",
-              border: "1px solid #334155",
-              borderRadius: "12px",
-              color: "#f8fafc",
-              boxShadow: "0 10px 25px -12px rgba(15, 23, 42, 0.9)",
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="latency"
-            stroke="#22d3ee"
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{ r: 4 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+          <LineChart data={chartData}>
+            <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 5" />
+            <XAxis dataKey="time" stroke="rgba(203,213,225,0.7)" tickLine={false} axisLine={false} />
+            <YAxis stroke="rgba(203,213,225,0.7)" tickLine={false} axisLine={false} width={44} />
+            <Tooltip
+              contentStyle={{
+                background: "var(--black-800)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: "12px",
+                color: "var(--text-primary)",
+                backdropFilter: "blur(16px)",
+                boxShadow: "0 0 20px rgba(59,130,246,0.25)",
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="latency"
+              stroke="var(--accent)"
+              strokeWidth={2.5}
+              dot={false}
+              style={{ filter: "drop-shadow(0 0 8px rgba(59,130,246,0.4))" }}
+              activeDot={{ r: 4, fill: "var(--text-primary)", stroke: "var(--accent)", strokeWidth: 2 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

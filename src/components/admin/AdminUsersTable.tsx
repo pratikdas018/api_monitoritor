@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -41,7 +41,7 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
 
   if (!users.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-700/80 bg-slate-900/50 p-6 text-sm text-slate-400">
+      <div className="rounded-2xl border border-dashed border-border-accent bg-surface-card/50 p-6 text-sm text-text-muted">
         No users found for this filter.
       </div>
     );
@@ -51,24 +51,24 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
     <div className="space-y-3">
       <div className="grid gap-3 md:hidden">
         {users.map((user) => (
-          <article key={user.id} className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4">
+          <article key={user.id} className="rounded-2xl border border-border bg-surface-card/60 p-4">
             <div className="space-y-1">
-              <p className="text-base font-semibold text-slate-100">{user.name || "Unknown"}</p>
-              <p className="break-all text-xs text-slate-400">{user.email}</p>
-              {user.authId ? <p className="break-all text-[11px] text-slate-500">authId: {user.authId}</p> : null}
+              <p className="text-base font-semibold text-text-primary">{user.name || "Unknown"}</p>
+              <p className="break-all text-xs text-text-muted">{user.email}</p>
+              {user.authId ? <p className="break-all text-[11px] text-text-muted">authId: {user.authId}</p> : null}
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <p className="rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-300">
+              <p className="rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-secondary">
                 Role: <span className="uppercase">{user.role}</span>
               </p>
-              <p className="rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-300">
+              <p className="rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-secondary">
                 Status: <span className="uppercase">{user.status}</span>
               </p>
-              <p className="col-span-2 rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-400">
+              <p className="col-span-2 rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-muted">
                 Created: {new Date(user.createdAt).toLocaleString()}
               </p>
-              <p className="col-span-2 rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-400">
+              <p className="col-span-2 rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-muted">
                 Last Login: {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : "Never"}
               </p>
             </div>
@@ -106,10 +106,10 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-900/60 md:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-border bg-surface-card/60 md:block">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-800/80 text-left text-xs uppercase tracking-[0.08em] text-slate-400">
+            <tr className="border-b border-border text-left text-xs uppercase tracking-[0.08em] text-text-muted">
               <th className="px-4 py-3">User</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Status</th>
@@ -120,18 +120,18 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr key={user.id} className="border-b border-slate-800/60 text-slate-200">
+              <tr key={user.id} className="border-b border-border text-text-secondary">
                 <td className="px-4 py-3">
                   <p className="font-medium">{user.name || "Unknown"}</p>
-                  <p className="text-xs text-slate-400">{user.email}</p>
-                  {user.authId ? <p className="text-[11px] text-slate-500">authId: {user.authId}</p> : null}
+                  <p className="text-xs text-text-muted">{user.email}</p>
+                  {user.authId ? <p className="text-[11px] text-text-muted">authId: {user.authId}</p> : null}
                 </td>
                 <td className="px-4 py-3 capitalize">{user.role}</td>
                 <td className="px-4 py-3 capitalize">{user.status}</td>
-                <td className="hidden px-4 py-3 text-xs text-slate-300 lg:table-cell">
+                <td className="hidden px-4 py-3 text-xs text-text-secondary lg:table-cell">
                   {new Date(user.createdAt).toLocaleString()}
                 </td>
-                <td className="hidden px-4 py-3 text-xs text-slate-300 xl:table-cell">
+                <td className="hidden px-4 py-3 text-xs text-text-secondary xl:table-cell">
                   {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString() : "Never"}
                 </td>
                 <td className="px-4 py-3">
@@ -173,3 +173,5 @@ export function AdminUsersTable({ users }: AdminUsersTableProps) {
     </div>
   );
 }
+
+

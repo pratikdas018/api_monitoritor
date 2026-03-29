@@ -9,18 +9,18 @@ export default function IncidentsLoading() {
         <div className="skeleton-shimmer h-10 w-40 rounded-xl" />
       </header>
 
-      <section className="glass-panel rounded-2xl p-5 md:p-6">
+      <section className="glass-card rounded-2xl border p-5 md:p-6">
         <div className="flex items-center justify-between gap-3">
           <div className="skeleton-shimmer h-4 w-40 rounded-xl" />
           <div
-            className="h-9 w-9 animate-spin rounded-full border-2 border-slate-600/70 border-t-sky-300/90"
+            className="h-9 w-9 animate-spin rounded-full border-2 border-accent/40 border-t-transparent"
             aria-label="Loading incidents"
           />
         </div>
 
         <div className="mt-5 space-y-3">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="rounded-2xl border border-slate-800/70 bg-slate-950/40 p-4">
+            <div key={index} className="glass-card rounded-2xl border p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="skeleton-shimmer h-4 w-44 rounded-xl" />
                 <div className="skeleton-shimmer h-7 w-24 rounded-full" />
@@ -41,4 +41,3 @@ export default function IncidentsLoading() {
     </main>
   );
 }
-

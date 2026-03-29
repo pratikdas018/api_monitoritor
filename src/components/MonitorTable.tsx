@@ -17,17 +17,17 @@ type MonitorTableProps = {
 export function MonitorTable({ monitors }: MonitorTableProps) {
   if (monitors.length === 0) {
     return (
-      <section className="glass-panel rounded-2xl border-dashed p-8 text-center text-sm text-slate-400">
+      <section className="glass-card rounded-2xl border border-dashed p-8 text-center text-sm text-text-muted">
         No monitors created yet.
       </section>
     );
   }
 
   return (
-    <section className="glass-panel overflow-hidden rounded-2xl">
+    <section className="glass-card overflow-hidden rounded-2xl border">
       <div className="max-h-[26rem] overflow-auto">
-        <table className="min-w-full divide-y divide-slate-800/80 text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-950/85 text-left text-xs uppercase tracking-[0.12em] text-slate-400 backdrop-blur-xl">
+        <table className="min-w-full divide-y divide-[color:var(--border)] text-sm">
+          <thead className="sticky top-0 z-10 bg-black/95 text-left text-xs uppercase tracking-[0.12em] text-text-muted backdrop-blur-xl">
             <tr>
               <th className="px-4 py-3 font-medium">Monitor</th>
               <th className="px-4 py-3 font-medium">Status</th>
@@ -39,7 +39,7 @@ export function MonitorTable({ monitors }: MonitorTableProps) {
               <th className="px-4 py-3 font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/80 text-slate-200">
+          <tbody className="divide-y divide-[color:var(--border)] text-text-secondary">
             {monitors.map((monitor) => {
               const pauseAction = toggleMonitorStatusAction.bind(null, monitor.id);
               const runNowAction = runMonitorNowAction.bind(null, monitor.id);
@@ -52,15 +52,15 @@ export function MonitorTable({ monitors }: MonitorTableProps) {
               return (
                 <tr
                   key={monitor.id}
-                  className="transition-colors duration-200 hover:bg-slate-800/45"
+                  className="transition-colors duration-200 hover:bg-[rgba(255,255,255,0.02)]"
                 >
                   <td className="px-4 py-3 align-top">
                     <div className="space-y-1">
-                      <p className="font-semibold text-slate-100">{monitor.name}</p>
-                      <p className="max-w-xs truncate text-xs text-slate-400">{monitor.url}</p>
+                      <p className="font-semibold text-text-primary">{monitor.name}</p>
+                      <p className="max-w-xs truncate text-xs text-text-muted">{monitor.url}</p>
                       <Link
                         href={`/monitors/${monitor.id}`}
-                        className="text-xs font-medium text-sky-300 transition hover:text-sky-200"
+                        className="text-xs font-medium text-accent-bright transition hover:text-accent-bright"
                       >
                         View Details
                       </Link>
@@ -69,19 +69,19 @@ export function MonitorTable({ monitors }: MonitorTableProps) {
                   <td className="px-4 py-3 align-top">
                     <StatusBadge status={monitor.status} />
                   </td>
-                  <td className="px-4 py-3 align-top text-slate-300">
+                  <td className="px-4 py-3 align-top text-text-secondary">
                     {monitor.intervalMinutes} min
                   </td>
-                  <td className="px-4 py-3 align-top text-slate-300">
+                  <td className="px-4 py-3 align-top text-text-secondary">
                     {formatUptime(uptimePercentage)}
                   </td>
                   <td className="px-4 py-3 align-top">
                     <SLABadge uptimePercentage={uptimePercentage} />
                   </td>
-                  <td className="px-4 py-3 align-top text-slate-300">
+                  <td className="px-4 py-3 align-top text-text-secondary">
                     {formatDurationMs(monitor.lastResponseTimeMs)}
                   </td>
-                  <td className="px-4 py-3 align-top text-slate-300">
+                  <td className="px-4 py-3 align-top text-text-secondary">
                     {formatDateTime(monitor.lastCheckedAt)}
                   </td>
                   <td className="px-4 py-3 align-top">
@@ -89,7 +89,7 @@ export function MonitorTable({ monitors }: MonitorTableProps) {
                       <form action={runNowAction}>
                         <button
                           type="submit"
-                          className="rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-1.5 text-xs font-semibold text-slate-200 transition duration-200 hover:border-sky-400/70 hover:text-sky-200"
+                          className="rounded-btn border border-border-accent bg-accent/10 px-3 py-1.5 text-xs font-semibold text-text-secondary transition duration-200 hover:text-text-primary"
                         >
                           Run Now
                         </button>
@@ -97,7 +97,7 @@ export function MonitorTable({ monitors }: MonitorTableProps) {
                       <form action={pauseAction}>
                         <button
                           type="submit"
-                          className="rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-1.5 text-xs font-semibold text-slate-200 transition duration-200 hover:border-amber-400/70 hover:text-amber-200"
+                          className="rounded-btn border border-border-accent bg-accent/10 px-3 py-1.5 text-xs font-semibold text-text-secondary transition duration-200 hover:border-accent/60 hover:text-accent-bright"
                         >
                           {monitor.status === "paused" ? "Resume" : "Pause"}
                         </button>
@@ -111,7 +111,7 @@ export function MonitorTable({ monitors }: MonitorTableProps) {
         </table>
       </div>
 
-      <div className="border-t border-slate-800/80 px-4 py-2 text-xs text-slate-500">
+      <div className="border-t border-[color:var(--border)] px-4 py-2 text-xs text-text-muted">
         {monitors.length} monitor{monitors.length === 1 ? "" : "s"} tracked
       </div>
     </section>

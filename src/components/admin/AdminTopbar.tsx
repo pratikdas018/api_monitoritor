@@ -33,13 +33,13 @@ export function AdminTopbar({
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-800/70 bg-slate-950/90 px-3 py-3 backdrop-blur-xl sm:px-4 md:px-5 lg:px-6">
+    <header className="sticky top-0 z-30 border-b border-border bg-black/90 px-3 py-3 backdrop-blur-xl sm:px-4 md:px-5 lg:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onOpenSidebar}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-700/80 bg-slate-900/70 text-slate-200 transition hover:border-sky-400/60 hover:text-sky-200 md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border-accent bg-black-900/80 text-text-secondary transition hover:border-accent/70 hover:text-accent-bright md:hidden"
             aria-label="Open navigation menu"
           >
             <svg aria-hidden viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2">
@@ -49,7 +49,7 @@ export function AdminTopbar({
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-700/80 bg-slate-900/70 text-slate-200 transition hover:border-sky-400/60 hover:text-sky-200 md:inline-flex xl:hidden"
+            className="hidden h-10 w-10 items-center justify-center rounded-lg border border-border-accent bg-black-900/80 text-text-secondary transition hover:border-accent/70 hover:text-accent-bright md:inline-flex xl:hidden"
             aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             <svg
@@ -63,15 +63,15 @@ export function AdminTopbar({
             </svg>
           </button>
           <div>
-            <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500 sm:text-xs">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-text-muted sm:text-xs">
               Admin Control Center
             </p>
-            <h1 className="text-base font-semibold text-slate-100 sm:text-lg">Platform Administration</h1>
+            <h1 className="text-base font-semibold text-text-primary sm:text-lg">Platform Administration</h1>
           </div>
         </div>
 
         <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-          <p className="hidden max-w-[220px] truncate rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-2 text-xs text-slate-300 lg:block">
+          <p className="hidden max-w-[220px] truncate rounded-lg border border-border-accent bg-black-900/80 px-3 py-2 text-xs text-text-secondary lg:block">
             {email}
           </p>
           <AdminThemeToggle />
@@ -88,3 +88,4 @@ export function AdminTopbar({
     </header>
   );
 }
+

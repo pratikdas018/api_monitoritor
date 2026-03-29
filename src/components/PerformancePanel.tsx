@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Bar,
@@ -72,18 +72,19 @@ function MetricTooltip({
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "2px solid #0f172a",
-        borderRadius: "10px",
+        background: "var(--black-800)",
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: "12px",
         padding: "10px 12px",
-        boxShadow: "0 14px 28px -12px rgba(2, 6, 23, 0.75)",
+        backdropFilter: "blur(16px)",
+        boxShadow: "0 0 20px rgba(59,130,246,0.25)",
         minWidth: "150px",
       }}
     >
       <p
         style={{
           margin: 0,
-          color: "#334155",
+          color: "var(--text-secondary)",
           fontSize: "14px",
           fontWeight: 700,
           lineHeight: 1.25,
@@ -106,7 +107,7 @@ function MetricTooltip({
       <p
         style={{
           margin: "6px 0 0",
-          color: "#0f172a",
+          color: "var(--text-muted)",
           fontSize: "12px",
           fontWeight: 700,
           textTransform: "uppercase",
@@ -134,68 +135,70 @@ export function PerformancePanel({ metrics }: PerformancePanelProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="glass-panel rounded-2xl p-4">
-          <h3 className="mb-2 text-sm font-semibold text-slate-100">Response Time Trend</h3>
+        <div className="glass-card rounded-2xl border p-4">
+          <h3 className="mb-2 text-sm font-semibold text-text-primary">Response Time Trend</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-                <LineChart
+              <LineChart
                 data={metrics.responseTrend.map((item) => ({
                   ...item,
                   timestamp: compactTimeLabel(item.timestamp),
                 }))}
               >
-                <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-                <XAxis dataKey="timestamp" stroke="#94a3b8" hide />
-                <YAxis stroke="#94a3b8" />
+                <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+                <XAxis dataKey="timestamp" stroke="rgba(203,213,225,0.7)" hide />
+                <YAxis stroke="rgba(203,213,225,0.7)" />
                 <Tooltip
                   content={
                     <MetricTooltip
                       valueLabel="Latency"
-                      accentColor="#0369a1"
+                      accentColor="var(--accent)"
                       suffix=" ms"
                     />
                   }
                   wrapperStyle={{ outline: "none" }}
-                  cursor={{ stroke: "#f8fafc", strokeOpacity: 0.35, strokeWidth: 1.2 }}
+                  cursor={{ stroke: "rgba(59,130,246,0.45)", strokeWidth: 1.2 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="latency"
-                  stroke="#22d3ee"
+                  stroke="var(--accent)"
                   dot={false}
-                  activeDot={{ r: 4, fill: "#f8fafc", stroke: "#06b6d4", strokeWidth: 2 }}
+                  style={{ filter: "drop-shadow(0 0 8px rgba(59,130,246,0.45))" }}
+                  activeDot={{ r: 4, fill: "var(--text-primary)", stroke: "var(--accent)", strokeWidth: 2 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="glass-panel rounded-2xl p-4">
-          <h3 className="mb-2 text-sm font-semibold text-slate-100">Uptime Trend</h3>
+        <div className="glass-card rounded-2xl border p-4">
+          <h3 className="mb-2 text-sm font-semibold text-text-primary">Uptime Trend</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={metrics.uptimeTrend}>
-                <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-                <XAxis dataKey="timestamp" stroke="#94a3b8" />
-                <YAxis domain={[0, 100]} stroke="#94a3b8" />
+                <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+                <XAxis dataKey="timestamp" stroke="rgba(203,213,225,0.7)" />
+                <YAxis domain={[0, 100]} stroke="rgba(203,213,225,0.7)" />
                 <Tooltip
                   content={
                     <MetricTooltip
                       valueLabel="Uptime"
-                      accentColor="#059669"
+                      accentColor="var(--green)"
                       suffix="%"
                       decimals={2}
                     />
                   }
                   wrapperStyle={{ outline: "none" }}
-                  cursor={{ stroke: "#f8fafc", strokeOpacity: 0.35, strokeWidth: 1.2 }}
+                  cursor={{ stroke: "rgba(59,130,246,0.45)", strokeWidth: 1.2 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="uptimePercentage"
-                  stroke="#34d399"
+                  stroke="var(--green)"
                   dot={false}
-                  activeDot={{ r: 4, fill: "#f8fafc", stroke: "#34d399", strokeWidth: 2 }}
+                  style={{ filter: "drop-shadow(0 0 8px rgba(16,185,129,0.45))" }}
+                  activeDot={{ r: 4, fill: "var(--text-primary)", stroke: "var(--green)", strokeWidth: 2 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -203,25 +206,25 @@ export function PerformancePanel({ metrics }: PerformancePanelProps) {
         </div>
       </div>
 
-      <div className="glass-panel rounded-2xl p-4">
-        <h3 className="mb-2 text-sm font-semibold text-slate-100">Status Code Distribution</h3>
+      <div className="glass-card rounded-2xl border p-4">
+        <h3 className="mb-2 text-sm font-semibold text-text-primary">Status Code Distribution</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={statusCodeData}>
-              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-              <XAxis dataKey="code" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
+              <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+              <XAxis dataKey="code" stroke="rgba(203,213,225,0.7)" />
+              <YAxis stroke="rgba(203,213,225,0.7)" />
               <Tooltip
                 content={
                   <MetricTooltip
                     valueLabel="Responses"
-                    accentColor="#1d4ed8"
+                    accentColor="var(--accent)"
                   />
                 }
                 wrapperStyle={{ outline: "none" }}
               />
-              <Legend />
-              <Bar dataKey="count" fill="#60a5fa" />
+              <Legend wrapperStyle={{ color: "var(--text-secondary)" }} />
+              <Bar dataKey="count" fill="var(--accent)" />
             </BarChart>
           </ResponsiveContainer>
         </div>

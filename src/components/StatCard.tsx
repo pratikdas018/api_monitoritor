@@ -5,22 +5,31 @@ type StatCardProps = {
 };
 
 const toneClasses: Record<NonNullable<StatCardProps["tone"]>, string> = {
-  default: "border-white/10 bg-slate-900/55 text-slate-200",
-  good: "border-emerald-400/35 bg-emerald-500/10 text-emerald-200",
-  bad: "border-rose-400/35 bg-rose-500/10 text-rose-200",
-  warn: "border-amber-400/35 bg-amber-500/10 text-amber-200",
-  info: "border-sky-400/35 bg-sky-500/10 text-sky-200",
+  default: "border-border bg-black-900 text-text-primary",
+  good: "border-emerald-500/35 bg-emerald-500/10 text-emerald-300",
+  bad: "border-rose-500/35 bg-rose-500/10 text-rose-300",
+  warn: "border-amber-500/35 bg-amber-500/10 text-amber-300",
+  info: "border-accent/35 bg-accent/10 text-accent-bright",
+};
+
+const topLineClasses: Record<NonNullable<StatCardProps["tone"]>, string> = {
+  default: "bg-accent",
+  good: "bg-status-up",
+  bad: "bg-status-down",
+  warn: "bg-status-degraded",
+  info: "bg-accent",
 };
 
 export function StatCard({ label, value, tone = "default" }: StatCardProps) {
+  const metricClass = tone === "info" ? "accent-text" : "";
+
   return (
-    <article
-      className={`card-interactive glass-panel rounded-2xl border p-4 md:p-5 ${toneClasses[tone]}`}
-    >
-      <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
+    <article className={`glass-card card-interactive relative overflow-hidden border p-4 md:p-5 ${toneClasses[tone]}`}>
+      <span className={`absolute inset-x-0 top-0 h-px ${topLineClasses[tone]}`} />
+      <p className="text-xs font-medium uppercase tracking-[0.14em] text-text-muted">
         {label}
       </p>
-      <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-50">{value}</p>
+      <p className={`mt-3 text-3xl font-semibold tracking-tight ${metricClass}`}>{value}</p>
     </article>
   );
 }

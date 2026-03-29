@@ -48,7 +48,7 @@ export function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-text-muted">
           Admin Email
         </label>
         <input
@@ -56,13 +56,13 @@ export function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="min-h-11 w-full rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-3 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
+          className="min-h-11 w-full rounded-xl border border-border-accent bg-surface-card/80 px-3.5 py-3 text-sm text-text-primary outline-none transition focus:border-accent/80 focus:ring-2 focus:ring-accent/30"
           placeholder="admin@company.com"
         />
       </div>
 
       <div>
-        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-text-muted">
           Password
         </label>
         <input
@@ -70,7 +70,7 @@ export function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="min-h-11 w-full rounded-xl border border-slate-700/80 bg-slate-950/80 px-3.5 py-3 text-sm text-slate-100 outline-none transition focus:border-sky-400/80 focus:ring-2 focus:ring-sky-500/30"
+          className="min-h-11 w-full rounded-xl border border-border-accent bg-surface-card/80 px-3.5 py-3 text-sm text-text-primary outline-none transition focus:border-accent/80 focus:ring-2 focus:ring-accent/30"
           placeholder="********"
         />
       </div>
@@ -78,7 +78,7 @@ export function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="min-h-11 w-full rounded-xl bg-gradient-to-r from-sky-500 to-blue-500 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:from-sky-400 hover:to-blue-400 disabled:opacity-60"
+        className="min-h-11 w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-text-primary transition hover:bg-accent-bright disabled:opacity-60"
       >
         {loading ? "Signing in..." : "Sign In as Admin"}
       </button>
@@ -91,3 +91,5 @@ export function AdminLoginForm({ nextPath }: AdminLoginFormProps) {
     </form>
   );
 }
+
+

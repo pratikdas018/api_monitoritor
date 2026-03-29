@@ -48,11 +48,11 @@ export function RepoListClient() {
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-slate-100 sm:text-3xl">GitHub Repositories</h1>
+        <h1 className="text-2xl font-semibold text-text-primary sm:text-3xl">GitHub Repositories</h1>
         <button
           type="button"
           onClick={() => loadRepos().catch(() => null)}
-          className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 transition hover:border-sky-400 hover:text-sky-200"
+          className="btn-ghost px-3 py-2 text-sm"
         >
           Refresh
         </button>
@@ -63,11 +63,11 @@ export function RepoListClient() {
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="animate-pulse rounded-xl border border-slate-800 bg-slate-900/60 p-4"
+              className="glass-card rounded-xl border p-4"
             >
-              <div className="h-4 w-2/3 rounded bg-slate-700" />
-              <div className="mt-2 h-3 w-full rounded bg-slate-800" />
-              <div className="mt-2 h-3 w-4/5 rounded bg-slate-800" />
+              <div className="skeleton h-4 w-2/3 rounded" />
+              <div className="skeleton mt-2 h-3 w-full rounded" />
+              <div className="skeleton mt-2 h-3 w-4/5 rounded" />
             </div>
           ))}
         </div>
@@ -80,34 +80,34 @@ export function RepoListClient() {
       ) : null}
 
       {!loading && !error && repos.length === 0 ? (
-        <p className="rounded-xl border border-slate-700 bg-slate-900/70 px-4 py-3 text-sm text-slate-400">
+        <p className="rounded-xl border border-border-accent bg-accent/10 px-4 py-3 text-sm text-text-secondary">
           No repositories found. Make sure you signed in with GitHub and granted repository scope.
         </p>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {repos.map((repo) => (
-          <article key={repo._id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+          <article key={repo._id} className="glass-card card-interactive rounded-xl border p-4 hover:animate-float">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h2 className="text-base font-semibold text-slate-100">{repo.fullName}</h2>
-                <p className="mt-1 text-xs text-slate-500">{repo.isPrivate ? "Private" : "Public"}</p>
+                <h2 className="text-base font-semibold text-text-primary">{repo.fullName}</h2>
+                <p className="mt-1 text-xs text-text-muted">{repo.isPrivate ? "Private" : "Public"}</p>
               </div>
               <a
                 href={repo.htmlUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs text-sky-300 hover:text-sky-200"
+                className="text-xs text-accent-bright hover:text-accent-bright"
               >
                 Open
               </a>
             </div>
 
-            <p className="mt-3 min-h-[40px] text-sm text-slate-400">
+            <p className="mt-3 min-h-[40px] text-sm text-text-secondary">
               {repo.description || "No description provided."}
             </p>
 
-            <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+            <div className="mt-3 flex items-center justify-between text-xs text-text-muted">
               <span>Scanned files: {repo.scannedFileCount ?? 0}</span>
               <span>
                 {repo.lastScannedAt
@@ -119,7 +119,7 @@ export function RepoListClient() {
             <div className="mt-4">
               <Link
                 href={`/repo/${repo._id}`}
-                className="inline-flex rounded-lg bg-sky-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
+                className="btn-primary inline-flex px-3 py-2 text-sm font-semibold"
               >
                 Analyze Repository
               </Link>

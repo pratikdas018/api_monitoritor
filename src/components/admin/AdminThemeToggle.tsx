@@ -25,9 +25,10 @@ export function AdminThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="min-h-10 rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-sky-400/60 hover:text-sky-200"
+      className="min-h-10 rounded-lg border border-border-accent bg-surface-card/70 px-3 py-2 text-xs font-semibold text-text-secondary transition hover:border-accent/70 hover:text-accent-bright"
     >
       {theme === "dark" ? "Light Mode" : "Dark Mode"}
     </button>
   );
 }
+

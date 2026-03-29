@@ -1,4 +1,4 @@
-import { SLA_TARGETS, getSLAStatus } from "@/lib/uptime";
+﻿import { SLA_TARGETS, getSLAStatus } from "@/lib/uptime";
 
 type SLABadgeProps = {
   uptimePercentage: number;
@@ -11,8 +11,8 @@ export function SLABadge({ uptimePercentage }: SLABadgeProps) {
         const status = getSLAStatus(uptimePercentage, target);
         const tone =
           status === "MET"
-            ? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30"
-            : "bg-rose-500/15 text-rose-300 ring-1 ring-rose-400/30";
+            ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
+            : "border border-rose-500/30 bg-rose-500/20 text-rose-400";
 
         return (
           <span

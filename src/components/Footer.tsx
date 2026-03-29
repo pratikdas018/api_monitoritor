@@ -32,8 +32,7 @@ const socialLinks: FooterLink[] = [
 ];
 
 function renderLink(link: FooterLink) {
-  const className =
-    "text-sm text-slate-400 transition hover:text-sky-200";
+  const className = "text-sm font-semibold text-text-secondary transition hover:text-text-primary";
 
   if (link.external) {
     return (
@@ -52,38 +51,39 @@ function renderLink(link: FooterLink) {
 
 export function Footer() {
   const pathname = usePathname();
+
   if (pathname?.startsWith("/admin")) {
     return null;
   }
 
   return (
-    <footer className="border-t border-slate-800/70 bg-[linear-gradient(180deg,rgba(2,6,23,0.75),rgba(2,6,23,0.97))]">
+    <footer className="border-t border-border bg-black/95 backdrop-blur-xl">
       <div className="mx-auto w-full max-w-[1400px] px-4 py-10 sm:px-6 lg:px-10">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <section>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Product</h3>
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted">Product</h3>
             <div className="mt-3 flex flex-col gap-2">{productLinks.map(renderLink)}</div>
           </section>
 
           <section>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Resources</h3>
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted">Resources</h3>
             <div className="mt-3 flex flex-col gap-2">{resourceLinks.map(renderLink)}</div>
           </section>
 
           <section>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Platform</h3>
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted">Platform</h3>
             <div className="mt-3 flex flex-col gap-2">{platformLinks.map(renderLink)}</div>
           </section>
 
           <section>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">Developer</h3>
-            <p className="mt-3 text-sm text-slate-300">
+            <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-text-muted">Developer</h3>
+            <p className="mt-3 text-sm font-semibold text-text-secondary">
               Developed by{" "}
               <a
                 href="https://pratik-web.vercel.app"
                 target="_blank"
                 rel="noreferrer"
-                className="font-medium text-sky-300 transition hover:text-sky-200"
+                className="font-bold text-accent-bright transition hover:text-accent-bright"
               >
                 Pratik
               </a>
@@ -95,7 +95,7 @@ export function Footer() {
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-lg border border-slate-700/80 bg-slate-900/70 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-sky-400/60 hover:text-sky-200"
+                  className="rounded-btn border border-border-accent bg-accent/10 px-2.5 py-1.5 text-xs font-semibold text-text-secondary transition hover:bg-accent/15 hover:text-text-primary"
                 >
                   {link.label}
                 </a>
@@ -104,8 +104,8 @@ export function Footer() {
           </section>
         </div>
 
-        <div className="mt-8 border-t border-slate-800/80 pt-5 text-xs text-slate-500">
-          © 2026 API Monitor Platform
+        <div className="mt-8 border-t border-border pt-5 text-xs font-medium text-text-muted">
+          (c) 2026 API Monitor Platform
         </div>
       </div>
     </footer>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 
@@ -22,25 +22,25 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-700/70 bg-slate-900/70 p-4">
+    <div className="glass-card rounded-2xl border p-4">
       <div className="flex items-center gap-3">
         {user.photo ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={user.photo}
             alt={user.name || "User profile"}
-            className="h-12 w-12 rounded-full border border-slate-600 object-cover"
+            className="h-12 w-12 rounded-full border border-accent/70 object-cover"
           />
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-slate-600 bg-slate-800 text-slate-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full border border-accent/70 bg-accent/15 text-accent-bright">
             U
           </div>
         )}
 
         <div className="min-w-0">
-          <p className="truncate text-base font-semibold text-slate-100">{user.name || "Unknown User"}</p>
-          <p className="truncate text-sm text-slate-400">{user.email || "No email"}</p>
-          <p className="truncate text-xs text-slate-500">UID: {user.uid}</p>
+          <p className="truncate text-base font-semibold text-text-primary">{user.name || "Unknown User"}</p>
+          <p className="truncate text-sm text-text-secondary">{user.email || "No email"}</p>
+          <p className="truncate text-xs text-text-muted">UID: {user.uid}</p>
         </div>
       </div>
 
@@ -48,7 +48,7 @@ export default function UserProfile() {
         type="button"
         onClick={handleLogout}
         disabled={loading}
-        className="mt-4 rounded-xl border border-slate-600 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-rose-400 hover:text-rose-300 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-4 rounded-btn border border-rose-500/40 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-300 transition hover:border-rose-400 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? "Please wait..." : "Logout"}
       </button>

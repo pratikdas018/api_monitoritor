@@ -60,82 +60,32 @@ export function Navbar({ githubUrl }: NavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800/70 bg-slate-950/70 backdrop-blur-xl">
-      <nav
-        className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-10"
-        aria-label="Primary navigation"
-      >
-        <div className="flex items-center gap-3">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-500/40 bg-sky-500/15 text-xs font-semibold tracking-[0.08em] text-sky-200">
-              AP
-            </span>
-            <span className="hidden text-sm font-semibold text-slate-100 sm:inline">
-              API Monitor Platform
-            </span>
-          </Link>
-        </div>
-
-        <div className="hidden items-center gap-1 md:flex">
-          {navItems.map((item) => {
-            const isActive = !item.external && normalizePath(item.href) === currentPath;
-            const className = `rounded-xl px-3 py-2 text-sm transition ${
-              isActive
-                ? "border border-sky-400/50 bg-sky-500/15 text-sky-200"
-                : "text-slate-300 hover:bg-slate-900/60 hover:text-sky-200"
-            }`;
-
-            if (item.external) {
-              return (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={className}
-                >
-                  {item.label}
-                </a>
-              );
-            }
-
-            return (
-              <Link key={item.label} href={item.href} className={className}>
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="hidden items-center gap-2 md:flex">
-          {status === "loading" ? (
-            <span className="rounded-xl border border-slate-700/80 bg-slate-900/70 px-3 py-2 text-xs text-slate-400">
-              Loading...
-            </span>
-          ) : sessionLabel ? (
-            <UserMenu />
-          ) : (
-            <Link href="/login" className="btn-soft">
-              Login
-            </Link>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setMobileOpen((value) => !value)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700/80 bg-slate-900/70 text-slate-200 transition hover:border-sky-400/60 hover:text-sky-200 md:hidden"
-          aria-label="Toggle mobile menu"
-          aria-expanded={mobileOpen}
+    <>
+      <header className="fixed inset-x-0 top-0 z-[60] border-b border-border bg-black/90 backdrop-blur-[20px]">
+        <nav
+          className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between px-4 sm:px-6 lg:px-10"
+          aria-label="Primary navigation"
         >
-          <span className="text-lg leading-none">{mobileOpen ? "x" : "="}</span>
-        </button>
-      </nav>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border-bright bg-black text-sm font-bold tracking-[0.08em] text-text-primary">
+                AP
+              </span>
+              <span className="hidden text-base font-semibold text-text-primary sm:inline">
+                API Monitor Platform
+              </span>
+            </Link>
+          </div>
 
-      {mobileOpen ? (
-        <div className="border-t border-slate-800/70 bg-slate-950/90 px-4 py-3 md:hidden">
-          <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2">
+          <div className="hidden items-center gap-1 md:flex">
             {navItems.map((item) => {
+              const isActive = !item.external && normalizePath(item.href) === currentPath;
+              const className = `rounded-xl px-3 py-2 text-[15px] font-semibold transition-all ${
+                isActive
+                  ? "relative font-bold text-accent-bright before:absolute before:bottom-0 before:left-1/2 before:h-1 before:w-1 before:-translate-x-1/2 before:rounded-full before:bg-accent"
+                  : "text-text-muted hover:text-text-primary"
+              }`;
+
               if (item.external) {
                 return (
                   <a
@@ -143,8 +93,7 @@ export function Navbar({ githubUrl }: NavbarProps) {
                     href={item.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-xl px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800/70 hover:text-sky-200"
-                    onClick={() => setMobileOpen(false)}
+                    className={className}
                   >
                     {item.label}
                   </a>
@@ -152,36 +101,96 @@ export function Navbar({ githubUrl }: NavbarProps) {
               }
 
               return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="rounded-xl px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800/70 hover:text-sky-200"
-                  onClick={() => setMobileOpen(false)}
-                >
+                <Link key={item.label} href={item.href} className={className}>
                   {item.label}
                 </Link>
               );
             })}
+          </div>
 
-            <div className="mt-2 border-t border-slate-800/80 pt-2">
-              {sessionLabel ? (
-                <div className="flex items-center justify-between rounded-xl border border-slate-700/80 bg-slate-900/70 px-3 py-2">
-                  <p className="max-w-[70%] truncate text-xs text-slate-300">{sessionLabel}</p>
-                  <UserMenu />
-                </div>
-              ) : (
-                <Link
-                  href="/login"
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  Login
-                </Link>
-              )}
+          <div className="hidden items-center gap-2 md:flex">
+            {status === "loading" ? (
+              <span className="rounded-btn border border-border bg-surface-card/70 px-3 py-2 text-xs text-text-muted">
+                Loading...
+              </span>
+            ) : sessionLabel ? (
+              <UserMenu />
+            ) : (
+              <Link href="/login" className="btn-primary px-4 py-2 text-sm font-semibold">
+                Login
+              </Link>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setMobileOpen((value) => !value)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border-accent bg-surface-card/70 text-text-secondary transition hover:text-text-primary md:hidden"
+            aria-label="Toggle mobile menu"
+            aria-expanded={mobileOpen}
+          >
+            <span className="text-lg leading-none">{mobileOpen ? "x" : "="}</span>
+          </button>
+        </nav>
+
+        {mobileOpen ? (
+          <div className="border-t border-border-accent bg-black/95 px-4 py-3 md:hidden">
+            <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2">
+              {navItems.map((item) => {
+                const isActive = !item.external && normalizePath(item.href) === currentPath;
+
+                if (item.external) {
+                  return (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl px-3 py-2 text-[15px] font-semibold text-text-secondary transition hover:bg-accent/10 hover:text-text-primary"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {item.label}
+                    </a>
+                  );
+                }
+
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={`rounded-xl px-3 py-2 text-[15px] font-semibold transition ${
+                      isActive
+                        ? "glass-card accent-text border-l-2 border-l-accent"
+                        : "text-text-secondary hover:bg-accent/10 hover:text-text-primary"
+                    }`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+
+              <div className="mt-2 border-t border-border pt-2">
+                {sessionLabel ? (
+                  <div className="glass-card flex items-center justify-between rounded-xl px-3 py-2">
+                    <p className="max-w-[70%] truncate text-sm text-text-secondary">{sessionLabel}</p>
+                    <UserMenu />
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
+                    className="btn-primary inline-flex w-full items-center justify-center px-4 py-2 text-sm font-semibold"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Login
+                  </Link>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
-    </header>
+        ) : null}
+      </header>
+      <div aria-hidden="true" className="h-16 w-full shrink-0" />
+    </>
   );
 }

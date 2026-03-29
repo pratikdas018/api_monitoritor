@@ -48,12 +48,12 @@ export function SocialLoginCard({ nextPath, error }: SocialLoginCardProps) {
   }
 
   return (
-    <section className="glass-panel rounded-3xl p-6 sm:p-8">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Authentication</p>
-      <h1 className="mt-2 text-3xl font-semibold text-slate-100 sm:text-4xl">
+    <section className="glass-card rounded-3xl border p-6 sm:p-8">
+      <p className="text-xs uppercase tracking-[0.2em] text-text-muted">Authentication</p>
+      <h1 className="mt-2 text-3xl font-semibold text-text-primary sm:text-4xl">
         Sign In
       </h1>
-      <p className="mt-2 text-sm text-slate-400">
+      <p className="mt-2 text-sm text-text-secondary">
         Continue with Google or GitHub to access your monitoring dashboard.
       </p>
 
@@ -62,9 +62,9 @@ export function SocialLoginCard({ nextPath, error }: SocialLoginCardProps) {
           type="button"
           onClick={() => handleProviderLogin("google")}
           disabled={Boolean(providerLoading)}
-          className="group flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300/70 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-ghost group flex w-full items-center justify-center gap-3 px-4 py-3 text-sm font-semibold text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-700 transition group-hover:border-slate-400">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent/60 bg-accent/15 text-[11px] font-bold text-accent-bright transition">
             G
           </span>
           {providerLoading === "google" ? "Connecting to Google..." : "Continue with Google"}
@@ -74,9 +74,9 @@ export function SocialLoginCard({ nextPath, error }: SocialLoginCardProps) {
           type="button"
           onClick={() => handleProviderLogin("github")}
           disabled={Boolean(providerLoading)}
-          className="group flex w-full items-center justify-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/80 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-ghost group flex w-full items-center justify-center gap-3 px-4 py-3 text-sm font-semibold text-text-primary disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-slate-600 bg-slate-950 text-[11px] font-bold text-slate-200 transition group-hover:border-slate-400">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent/60 bg-accent/15 text-[11px] font-bold text-accent-bright transition">
             GH
           </span>
           {providerLoading === "github" ? "Connecting to GitHub..." : "Continue with GitHub"}
@@ -84,7 +84,7 @@ export function SocialLoginCard({ nextPath, error }: SocialLoginCardProps) {
       </div>
 
       {status === "loading" ? (
-        <p className="mt-4 text-xs text-slate-400">Checking existing session...</p>
+        <p className="mt-4 text-xs text-text-muted">Checking existing session...</p>
       ) : null}
 
       {mappedError ? (
@@ -94,7 +94,7 @@ export function SocialLoginCard({ nextPath, error }: SocialLoginCardProps) {
       ) : null}
 
       {localError ? (
-        <p className="mt-3 rounded-xl border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+        <p className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
           {localError}
         </p>
       ) : null}

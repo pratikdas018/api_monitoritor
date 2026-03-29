@@ -19,42 +19,42 @@ type MonitorStatusTableProps = {
 export function MonitorStatusTable({ rows }: MonitorStatusTableProps) {
   if (rows.length === 0) {
     return (
-      <section className="glass-panel rounded-2xl border-dashed p-8 text-center text-sm text-slate-400">
+      <section className="glass-card rounded-2xl border border-dashed p-8 text-center text-sm text-text-muted">
         No monitors available on this status page.
       </section>
     );
   }
 
   return (
-    <section className="glass-panel overflow-hidden rounded-2xl">
-      <div className="md:hidden space-y-3 p-3">
+    <section className="glass-card overflow-hidden rounded-2xl border">
+      <div className="space-y-3 p-3 md:hidden">
         {rows.map((row) => (
-          <article key={row.id} className="rounded-xl border border-slate-700/70 bg-slate-900/70 p-4">
+          <article key={row.id} className="glass-card rounded-xl border p-4">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-100">{row.name}</h3>
+              <h3 className="text-sm font-semibold text-text-primary">{row.name}</h3>
               <StatusBadge status={row.status} />
             </div>
-            <dl className="mt-3 space-y-1 text-sm text-slate-300">
+            <dl className="mt-3 space-y-1 text-sm text-text-secondary">
               <div className="flex justify-between gap-3">
-                <dt className="text-slate-500">Uptime</dt>
+                <dt className="text-text-muted">Uptime</dt>
                 <dd>{formatUptime(row.uptimePercentage)}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-slate-500">Avg Latency</dt>
+                <dt className="text-text-muted">Avg Latency</dt>
                 <dd>{formatDurationMs(row.avgLatencyMs)}</dd>
               </div>
               <div className="space-y-1">
-                <dt className="text-slate-500">SLA</dt>
+                <dt className="text-text-muted">SLA</dt>
                 <dd>
                   <SLABadge uptimePercentage={row.uptimePercentage} />
                 </dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-slate-500">Last Check</dt>
+                <dt className="text-text-muted">Last Check</dt>
                 <dd>{formatDateTime(row.lastCheckedAt)}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-slate-500">Last Incident</dt>
+                <dt className="text-text-muted">Last Incident</dt>
                 <dd>{formatDateTime(row.lastIncidentAt)}</dd>
               </div>
             </dl>
@@ -62,10 +62,10 @@ export function MonitorStatusTable({ rows }: MonitorStatusTableProps) {
         ))}
       </div>
 
-      <div className="hidden md:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-800/80 text-sm">
+      <div className="hidden overflow-x-auto md:block">
+        <table className="min-w-full divide-y divide-[color:var(--border)] text-sm">
           <caption className="sr-only">Public monitor status table</caption>
-          <thead className="sticky top-0 z-10 bg-slate-950/85 text-left text-xs uppercase tracking-[0.12em] text-slate-400 backdrop-blur-xl">
+          <thead className="sticky top-0 z-10 bg-black/95 text-left text-xs uppercase tracking-[0.12em] text-text-muted backdrop-blur-xl">
             <tr>
               <th className="px-4 py-3 font-medium">Monitor</th>
               <th className="px-4 py-3 font-medium">Status</th>
@@ -76,20 +76,20 @@ export function MonitorStatusTable({ rows }: MonitorStatusTableProps) {
               <th className="px-4 py-3 font-medium">Last Incident</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/80 text-slate-200">
+          <tbody className="divide-y divide-[color:var(--border)] text-text-secondary">
             {rows.map((row) => (
-              <tr key={row.id} className="transition-colors duration-200 hover:bg-slate-800/45">
-                <td className="px-4 py-3 font-medium text-slate-100">{row.name}</td>
+              <tr key={row.id} className="transition-colors duration-200 hover:bg-[rgba(255,255,255,0.02)]">
+                <td className="px-4 py-3 font-medium text-text-primary">{row.name}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={row.status} />
                 </td>
-                <td className="px-4 py-3 text-slate-300">{formatUptime(row.uptimePercentage)}</td>
-                <td className="px-4 py-3 text-slate-300">
+                <td className="px-4 py-3 text-text-secondary">{formatUptime(row.uptimePercentage)}</td>
+                <td className="px-4 py-3 text-text-secondary">
                   <SLABadge uptimePercentage={row.uptimePercentage} />
                 </td>
-                <td className="px-4 py-3 text-slate-300">{formatDurationMs(row.avgLatencyMs)}</td>
-                <td className="px-4 py-3 text-slate-300">{formatDateTime(row.lastCheckedAt)}</td>
-                <td className="px-4 py-3 text-slate-300">{formatDateTime(row.lastIncidentAt)}</td>
+                <td className="px-4 py-3 text-text-secondary">{formatDurationMs(row.avgLatencyMs)}</td>
+                <td className="px-4 py-3 text-text-secondary">{formatDateTime(row.lastCheckedAt)}</td>
+                <td className="px-4 py-3 text-text-secondary">{formatDateTime(row.lastIncidentAt)}</td>
               </tr>
             ))}
           </tbody>

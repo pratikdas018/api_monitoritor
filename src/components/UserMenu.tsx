@@ -60,12 +60,12 @@ export function UserMenu() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex items-center gap-2 rounded-xl border border-slate-700/80 bg-slate-900/70 px-2.5 py-1.5 text-sm font-medium text-slate-200 transition hover:border-sky-400/70 hover:text-sky-200"
+        className="inline-flex items-center gap-2 rounded-btn border border-border bg-black px-2.5 py-1.5 text-[15px] font-medium text-text-secondary transition hover:text-text-primary"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Open user menu"
       >
-        <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-sky-400/40 bg-sky-500/15 text-xs font-semibold text-sky-200">
+        <span className="inline-flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-border bg-black text-sm font-semibold text-text-primary">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -78,7 +78,7 @@ export function UserMenu() {
             initials
           )}
         </span>
-        <span className="hidden max-w-[150px] truncate text-xs text-slate-300 sm:inline">
+        <span className="hidden max-w-[150px] truncate text-sm text-text-secondary sm:inline">
           {displayName}
         </span>
       </button>
@@ -87,15 +87,15 @@ export function UserMenu() {
         <div
           role="menu"
           aria-label="User menu"
-          className="absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl border border-slate-700/80 bg-slate-950/95 p-1.5 shadow-2xl shadow-slate-950/70"
+          className="glass-card absolute right-0 z-50 mt-2 w-48 overflow-hidden rounded-xl p-1.5"
         >
-          <div className="mb-1 rounded-lg border border-slate-700/80 bg-slate-900/70 px-3 py-2">
-            <p className="truncate text-xs font-semibold text-slate-100">{displayName}</p>
-            <p className="truncate text-[11px] text-slate-400">{displayEmail}</p>
+          <div className="mb-1 rounded-lg border border-border bg-surface-card/70 px-3 py-2">
+            <p className="truncate text-sm font-semibold text-text-primary">{displayName}</p>
+            <p className="truncate text-[11px] text-text-muted">{displayEmail}</p>
           </div>
           <Link
             href="/dashboard"
-            className="block rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800/80 hover:text-sky-200"
+            className="block rounded-lg px-3 py-2 text-sm text-text-secondary transition hover:bg-accent/10 hover:text-text-primary"
             role="menuitem"
             onClick={() => setOpen(false)}
           >
@@ -103,7 +103,7 @@ export function UserMenu() {
           </Link>
           <Link
             href="/profile"
-            className="block rounded-lg px-3 py-2 text-sm text-slate-200 transition hover:bg-slate-800/80 hover:text-sky-200"
+            className="block rounded-lg px-3 py-2 text-sm text-text-secondary transition hover:bg-accent/10 hover:text-text-primary"
             role="menuitem"
             onClick={() => setOpen(false)}
           >
@@ -113,7 +113,7 @@ export function UserMenu() {
             type="button"
             onClick={handleLogout}
             disabled={loading}
-            className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-sm text-rose-300 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-1 block w-full rounded-lg px-3 py-2 text-left text-sm text-rose-300 transition hover:bg-status-down/10 disabled:cursor-not-allowed disabled:opacity-60"
             role="menuitem"
           >
             {loading ? "Logging out..." : "Logout"}

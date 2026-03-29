@@ -21,11 +21,11 @@ export function AdminSidebar({ collapsed = false, onNavigate }: AdminSidebarProp
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="border-b border-slate-800/70 px-4 py-5 md:px-5">
-        <p className={`text-[11px] uppercase tracking-[0.22em] text-slate-500 ${collapsed ? "md:text-center" : ""}`}>
+      <div className="border-b border-border px-4 py-5 md:px-5">
+        <p className={`text-[11px] uppercase tracking-[0.22em] text-text-muted ${collapsed ? "md:text-center" : ""}`}>
           Admin Panel
         </p>
-        <p className={`mt-1 text-base font-semibold text-slate-100 ${collapsed ? "md:text-center md:text-sm xl:text-base" : ""}`}>
+        <p className={`mt-1 text-base font-semibold text-text-primary ${collapsed ? "md:text-center md:text-sm xl:text-base" : ""}`}>
           {collapsed ? "APM" : "API Monitor"}
         </p>
       </div>
@@ -41,8 +41,8 @@ export function AdminSidebar({ collapsed = false, onNavigate }: AdminSidebarProp
               onClick={onNavigate}
               className={`rounded-xl px-3 py-2 text-sm transition ${
                 isActive
-                  ? "border border-sky-500/60 bg-sky-500/15 text-sky-200"
-                  : "border border-transparent text-slate-300 hover:border-slate-700/80 hover:bg-slate-900/70 hover:text-sky-200"
+                  ? "border border-accent/60 bg-accent/10 text-accent-bright"
+                  : "border border-transparent text-text-secondary hover:border-border-accent hover:bg-black-900/80 hover:text-accent-bright"
               } ${collapsed ? "md:px-2.5 md:text-center xl:px-3 xl:text-left" : ""}`}
               title={collapsed ? link.label : undefined}
             >
@@ -57,7 +57,7 @@ export function AdminSidebar({ collapsed = false, onNavigate }: AdminSidebarProp
 
       <div className="mt-auto px-4 pb-4 md:px-5 md:pb-5">
         <p
-          className={`rounded-xl border border-slate-800/80 bg-slate-900/60 px-3 py-2 text-[11px] text-slate-500 ${
+          className={`rounded-xl border border-border bg-black-900/75 px-3 py-2 text-[11px] text-text-muted ${
             collapsed ? "md:hidden xl:block" : ""
           }`}
         >
@@ -67,3 +67,4 @@ export function AdminSidebar({ collapsed = false, onNavigate }: AdminSidebarProp
     </div>
   );
 }
+

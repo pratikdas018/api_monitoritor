@@ -18,10 +18,10 @@ export function ProjectSwitcher({ projects, activeProjectId }: ProjectSwitcherPr
           <Link
             key={project.id}
             href={isActive ? "/dashboard" : `/dashboard?projectId=${project.id}`}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold tracking-wide transition ${
+            className={`rounded-btn px-3 py-1.5 text-xs font-semibold tracking-wide transition ${
               isActive
-                ? "border border-sky-400/60 bg-sky-500/15 text-sky-200"
-                : "border border-slate-700/80 bg-slate-900/60 text-slate-300 hover:border-slate-500 hover:text-slate-100"
+                ? "glass-card border-l-2 border-l-accent accent-text"
+                : "border border-border-accent bg-accent/10 text-text-secondary hover:text-text-primary"
             }`}
           >
             {project.name}

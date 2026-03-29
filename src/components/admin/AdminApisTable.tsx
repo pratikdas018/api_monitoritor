@@ -54,7 +54,7 @@ export function AdminApisTable({ apis }: AdminApisTableProps) {
 
   if (!apis.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-700/80 bg-slate-900/50 p-6 text-sm text-slate-400">
+      <div className="rounded-2xl border border-dashed border-border-accent bg-surface-card/50 p-6 text-sm text-text-muted">
         No API monitors found for this filter.
       </div>
     );
@@ -64,36 +64,36 @@ export function AdminApisTable({ apis }: AdminApisTableProps) {
     <div className="space-y-3">
       <div className="grid gap-3 md:hidden">
         {apis.map((api) => (
-          <article key={api.id} className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4">
+          <article key={api.id} className="rounded-2xl border border-border bg-surface-card/60 p-4">
             <div className="space-y-1">
-              <p className="text-base font-semibold text-slate-100">{api.name}</p>
-              <p className="break-all text-xs text-slate-400">{api.url}</p>
-              <p className="text-[11px] text-slate-500">Interval: {api.intervalMinutes}m</p>
+              <p className="text-base font-semibold text-text-primary">{api.name}</p>
+              <p className="break-all text-xs text-text-muted">{api.url}</p>
+              <p className="text-[11px] text-text-muted">Interval: {api.intervalMinutes}m</p>
               <Link
                 href={`/admin/logs?monitorId=${encodeURIComponent(api.id)}`}
-                className="text-xs font-medium text-sky-300 hover:text-sky-200"
+                className="text-xs font-medium text-accent-bright hover:text-accent-bright"
               >
                 View Logs
               </Link>
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <p className="rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-300">
+              <p className="rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-secondary">
                 Status: <span className="uppercase">{api.status}</span>
               </p>
-              <p className="rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-300">
+              <p className="rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-secondary">
                 Uptime: {api.uptimePercentage.toFixed(2)}%
               </p>
-              <p className="rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-300">
+              <p className="rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-secondary">
                 Latency: {api.responseTimeMs ?? "N/A"} ms
               </p>
-              <p className="rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-300">
+              <p className="rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-secondary">
                 Owner: {api.ownerEmail || "N/A"}
               </p>
-              <p className="col-span-2 break-all rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-400">
+              <p className="col-span-2 break-all rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-muted">
                 userId: {api.userId}
               </p>
-              <p className="col-span-2 rounded-lg border border-slate-800/70 bg-slate-950/60 px-2 py-1.5 text-slate-400">
+              <p className="col-span-2 rounded-lg border border-border bg-surface-card/60 px-2 py-1.5 text-text-muted">
                 Updated: {new Date(api.updatedAt).toLocaleString()}
               </p>
             </div>
@@ -131,10 +131,10 @@ export function AdminApisTable({ apis }: AdminApisTableProps) {
         ))}
       </div>
 
-      <div className="hidden overflow-x-auto rounded-2xl border border-slate-800/80 bg-slate-900/60 md:block">
+      <div className="hidden overflow-x-auto rounded-2xl border border-border bg-surface-card/60 md:block">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-800/80 text-left text-xs uppercase tracking-[0.08em] text-slate-400">
+            <tr className="border-b border-border text-left text-xs uppercase tracking-[0.08em] text-text-muted">
               <th className="px-4 py-3">API</th>
               <th className="hidden px-4 py-3 lg:table-cell">Owner</th>
               <th className="px-4 py-3">Status</th>
@@ -146,26 +146,26 @@ export function AdminApisTable({ apis }: AdminApisTableProps) {
           </thead>
           <tbody>
             {apis.map((api) => (
-              <tr key={api.id} className="border-b border-slate-800/60 text-slate-200">
+              <tr key={api.id} className="border-b border-border text-text-secondary">
                 <td className="px-4 py-3">
                   <p className="font-medium">{api.name}</p>
-                  <p className="max-w-md truncate text-xs text-slate-400">{api.url}</p>
-                  <p className="text-[11px] text-slate-500">Interval: {api.intervalMinutes}m</p>
+                  <p className="max-w-md truncate text-xs text-text-muted">{api.url}</p>
+                  <p className="text-[11px] text-text-muted">Interval: {api.intervalMinutes}m</p>
                   <Link
                     href={`/admin/logs?monitorId=${encodeURIComponent(api.id)}`}
-                    className="text-[11px] text-sky-300 hover:text-sky-200"
+                    className="text-[11px] text-accent-bright hover:text-accent-bright"
                   >
                     View Logs
                   </Link>
                 </td>
                 <td className="hidden px-4 py-3 text-xs lg:table-cell">
-                  <p className="text-slate-300">{api.ownerEmail || "N/A"}</p>
-                  <p className="max-w-[200px] truncate text-slate-500">{api.userId}</p>
+                  <p className="text-text-secondary">{api.ownerEmail || "N/A"}</p>
+                  <p className="max-w-[200px] truncate text-text-muted">{api.userId}</p>
                 </td>
                 <td className="px-4 py-3 uppercase">{api.status}</td>
                 <td className="px-4 py-3">{api.uptimePercentage.toFixed(2)}%</td>
                 <td className="hidden px-4 py-3 xl:table-cell">{api.responseTimeMs ?? "N/A"} ms</td>
-                <td className="hidden px-4 py-3 text-xs text-slate-300 xl:table-cell">
+                <td className="hidden px-4 py-3 text-xs text-text-secondary xl:table-cell">
                   {new Date(api.updatedAt).toLocaleString()}
                 </td>
                 <td className="px-4 py-3">
@@ -207,3 +207,4 @@ export function AdminApisTable({ apis }: AdminApisTableProps) {
     </div>
   );
 }
+

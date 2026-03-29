@@ -39,9 +39,9 @@ export function AdminShell({ email, children }: AdminShellProps) {
   const sidebarWidth = sidebarCollapsed ? "md:w-24 xl:w-72" : "md:w-64 xl:w-72";
 
   return (
-    <div className="admin-shell min-h-screen bg-slate-950 text-slate-100">
+    <div className="admin-shell min-h-screen bg-black text-text-primary">
       <div
-        className={`fixed inset-0 z-40 bg-slate-950/75 backdrop-blur-sm transition-opacity md:hidden ${
+        className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-sm transition-opacity md:hidden ${
           sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={() => setSidebarOpen(false)}
@@ -49,7 +49,7 @@ export function AdminShell({ email, children }: AdminShellProps) {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-slate-800/70 bg-slate-950/95 shadow-2xl shadow-black/40 transition-all duration-300 ease-out md:translate-x-0 ${sidebarWidth} ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-black-900/95 shadow-2xl shadow-accent transition-all duration-300 ease-out md:translate-x-0 ${sidebarWidth} ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -68,3 +68,6 @@ export function AdminShell({ email, children }: AdminShellProps) {
     </div>
   );
 }
+
+
+
