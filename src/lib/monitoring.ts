@@ -53,6 +53,15 @@ type CheckResult = {
   responseBody: string | null;
 };
 
+function isVersionConflictError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    (error as { name?: string }).name === "VersionError"
+  );
+}
+
 function normalizeResponseBody(value: unknown) {
   if (value === null || value === undefined) return null;
   if (typeof value === "string") return value.slice(0, 8_000);
@@ -416,11 +425,64 @@ async function createApiStatusLog(params: {
   });
 }
 
+async function persistCheckArtifacts(params: {
+  monitorId: Types.ObjectId;
+  projectId: Types.ObjectId | null;
+  userId: string;
+  endpoint: string;
+  region: MonitorRegion;
+  regionStatus: MonitorStatus;
+  result: CheckResult;
+  checkedAt: Date;
+}) {
+  await saveHistory({
+    monitorId: params.monitorId,
+    projectId: params.projectId,
+    region: params.region,
+    status: params.regionStatus,
+    latency: params.result.responseTimeMs,
+    statusCode: params.result.statusCode,
+    errorMessage: params.result.errorMessage,
+    timestamp: params.checkedAt,
+  });
+
+  await createMonitorEventLog({
+    monitorId: params.monitorId,
+    projectId: params.projectId,
+    userId: params.userId,
+    eventType: params.result.success ? "status_up" : "status_down",
+    status: params.regionStatus,
+    region: params.region,
+    responseTimeMs: params.result.responseTimeMs,
+    statusCode: params.result.statusCode,
+    message: params.result.errorMessage,
+    checkedAt: params.checkedAt,
+  }).catch((error) => {
+    console.warn("[monitoring] status log failed", error);
+  });
+
+  await createApiStatusLog({
+    userId: params.userId,
+    monitorId: params.monitorId,
+    endpoint: params.endpoint,
+    state: params.result.success ? "UP" : "DOWN",
+    statusCode: params.result.statusCode,
+    errorMessage: params.result.errorMessage,
+    responseBody: params.result.responseBody,
+    responseTimeMs: params.result.responseTimeMs,
+    region: params.region,
+    checkedAt: params.checkedAt,
+  }).catch((error) => {
+    console.warn("[monitoring] api status log failed", error);
+  });
+}
+
 export type RunMonitorCheckOptions = {
   requestTimeoutMs?: number;
   region?: MonitorRegion;
   reason?: "create" | "manual" | "scheduler";
   retryAttempt?: number;
+  versionConflictRetry?: number;
 };
 
 export async function runMonitorCheck(monitorId: string, options?: RunMonitorCheckOptions) {
@@ -442,6 +504,7 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
   const region = options.region;
   const checkedAt = new Date();
   const requestTimeoutMs = options?.requestTimeoutMs ?? monitor.timeoutMs;
+  const versionConflictRetry = options?.versionConflictRetry ?? 0;
   const result = await checkEndpoint(monitor.url, requestTimeoutMs, region);
   const regionStatus: MonitorStatus = result.success ? "up" : "down";
 
@@ -479,52 +542,6 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     monitor.latencyLogs = monitor.latencyLogs.slice(-MAX_LATENCY_SAMPLES);
   }
 
-  await saveHistory({
-    monitorId: monitor._id,
-    projectId: monitor.projectId ?? null,
-    region,
-    status: regionStatus,
-    latency: result.responseTimeMs,
-    statusCode: result.statusCode,
-    errorMessage: result.errorMessage,
-    timestamp: checkedAt,
-  });
-
-  await createMonitorEventLog({
-    monitorId: monitor._id,
-    projectId: monitor.projectId ?? null,
-    userId: monitor.userId,
-    eventType: result.success ? "status_up" : "status_down",
-    status: regionStatus,
-    region,
-    responseTimeMs: result.responseTimeMs,
-    statusCode: result.statusCode,
-    message: result.errorMessage,
-    checkedAt,
-  }).catch((error) => {
-    console.warn("[monitoring] status log failed", error);
-  });
-
-  await createApiStatusLog({
-    userId: monitor.userId,
-    monitorId: monitor._id,
-    endpoint: monitor.url,
-    state: result.success ? "UP" : "DOWN",
-    statusCode: result.statusCode,
-    errorMessage: result.errorMessage,
-    responseBody: result.responseBody,
-    responseTimeMs: result.responseTimeMs,
-    region,
-    checkedAt,
-  }).catch((error) => {
-    console.warn("[monitoring] api status log failed", error);
-  });
-
-  const openIncidentDoc = await Incident.findOne({
-    monitorId: monitor._id,
-    status: { $in: ["OPEN", "open"] },
-  });
-
   if (aggregatedStatus === "down") {
     monitor.consecutiveFailures = monitor.consecutiveFailures + 1;
     monitor.retryStrikeCount = (monitor.retryStrikeCount ?? 0) + 1;
@@ -532,7 +549,32 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     if (monitor.retryStrikeCount < 3) {
       const delayMs = FAILURE_RETRY_DELAYS_MS[monitor.retryStrikeCount - 1] ?? 30_000;
       monitor.nextCheckAt = new Date(Date.now() + delayMs);
-      await monitor.save();
+      try {
+        await monitor.save();
+      } catch (error) {
+        if (isVersionConflictError(error) && versionConflictRetry < 1) {
+          await runMonitorCheck(monitorId, {
+            ...options,
+            region,
+            requestTimeoutMs,
+            versionConflictRetry: versionConflictRetry + 1,
+          });
+          return;
+        }
+        throw error;
+      }
+
+      await persistCheckArtifacts({
+        monitorId: monitor._id,
+        projectId: monitor.projectId ?? null,
+        userId: monitor.userId,
+        endpoint: monitor.url,
+        region,
+        regionStatus,
+        result,
+        checkedAt,
+      });
+
       await enqueueMonitorCheck(monitor.id, "scheduler", {
         region,
         retryAttempt: monitor.retryStrikeCount,
@@ -542,7 +584,36 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
     }
 
     monitor.nextCheckAt = calculateNextCheckAt(monitor.intervalMinutes);
-    await monitor.save();
+    try {
+      await monitor.save();
+    } catch (error) {
+      if (isVersionConflictError(error) && versionConflictRetry < 1) {
+        await runMonitorCheck(monitorId, {
+          ...options,
+          region,
+          requestTimeoutMs,
+          versionConflictRetry: versionConflictRetry + 1,
+        });
+        return;
+      }
+      throw error;
+    }
+
+    await persistCheckArtifacts({
+      monitorId: monitor._id,
+      projectId: monitor.projectId ?? null,
+      userId: monitor.userId,
+      endpoint: monitor.url,
+      region,
+      regionStatus,
+      result,
+      checkedAt,
+    });
+
+    const openIncidentDoc = await Incident.findOne({
+      monitorId: monitor._id,
+      status: { $in: ["OPEN", "open"] },
+    });
 
     if (openIncidentDoc) {
       await appendIncidentFailure({
@@ -575,7 +646,36 @@ export async function runMonitorCheck(monitorId: string, options?: RunMonitorChe
   monitor.consecutiveFailures = 0;
   monitor.retryStrikeCount = 0;
   monitor.nextCheckAt = calculateNextCheckAt(monitor.intervalMinutes);
-  await monitor.save();
+  try {
+    await monitor.save();
+  } catch (error) {
+    if (isVersionConflictError(error) && versionConflictRetry < 1) {
+      await runMonitorCheck(monitorId, {
+        ...options,
+        region,
+        requestTimeoutMs,
+        versionConflictRetry: versionConflictRetry + 1,
+      });
+      return;
+    }
+    throw error;
+  }
+
+  await persistCheckArtifacts({
+    monitorId: monitor._id,
+    projectId: monitor.projectId ?? null,
+    userId: monitor.userId,
+    endpoint: monitor.url,
+    region,
+    regionStatus,
+    result,
+    checkedAt,
+  });
+
+  const openIncidentDoc = await Incident.findOne({
+    monitorId: monitor._id,
+    status: { $in: ["OPEN", "open"] },
+  });
 
   if (openIncidentDoc) {
     await resolveIncident({

@@ -1,0 +1,17 @@
+
+> api_monitor@0.1.0 dev:web
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 7.6s
+ ○ Compiling / ...
+ ✓ Compiled / in 15.4s (598 modules)
+ GET / 200 in 16527ms
+ ✓ Compiled in 2s (287 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1479ms (569 modules)
+ GET / 404 in 2982ms
