@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
+import { resolveAuthSecret } from "@/lib/authSecret";
 import { getCachedFileContent, getCachedRepoTree, setCachedFileContent, setCachedRepoTree } from "@/lib/githubCache";
 
 const GITHUB_API_BASE = "https://api.github.com";
@@ -41,10 +42,37 @@ export class GitHubApiError extends Error {
 }
 
 export async function getGitHubAccessToken(request: NextRequest) {
-  const jwt = await getToken({
+  const secret = resolveAuthSecret() || undefined;
+  const secureCookie = process.env.NODE_ENV === "production";
+  const authjsCookieName = secureCookie ? "__Secure-authjs.session-token" : "authjs.session-token";
+  const nextAuthCookieName = secureCookie
+    ? "__Secure-next-auth.session-token"
+    : "next-auth.session-token";
+
+  let jwt = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret,
+    secureCookie,
   });
+
+  // Production proxies can interfere with automatic cookie-name detection.
+  if (!jwt) {
+    jwt = await getToken({
+      req: request,
+      secret,
+      secureCookie,
+      cookieName: authjsCookieName,
+    });
+  }
+  if (!jwt) {
+    jwt = await getToken({
+      req: request,
+      secret,
+      secureCookie,
+      cookieName: nextAuthCookieName,
+    });
+  }
+
   const accessToken =
     typeof jwt?.githubAccessToken === "string" && jwt.githubAccessToken.trim()
       ? jwt.githubAccessToken

@@ -3,6 +3,7 @@ import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 
 import { connectToDatabase } from "@/lib/db";
+import { resolveAuthSecret } from "@/lib/authSecret";
 import User from "@/models/User";
 
 declare module "next-auth" {
@@ -77,6 +78,7 @@ const resolvedAuthBaseUrl = resolveAuthBaseUrl();
 if (resolvedAuthBaseUrl && process.env.NEXTAUTH_URL !== resolvedAuthBaseUrl) {
   process.env.NEXTAUTH_URL = resolvedAuthBaseUrl;
 }
+const resolvedAuthSecret = resolveAuthSecret();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // Route users to our custom App Router login page.
@@ -86,7 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   // Use request host/proxy headers safely on Vercel and reverse proxies.
   trustHost: true,
-  secret: readEnv("NEXTAUTH_SECRET"),
+  secret: resolvedAuthSecret,
   // Ensure secure auth cookies in production.
   useSecureCookies: process.env.NODE_ENV === "production",
   // JWT sessions work well with App Router, middleware, and server actions.
@@ -162,8 +164,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.provider = account.provider;
       }
       // Keep GitHub access token only in JWT (server-side use), never in session payload.
-      if (account?.provider === "github" && typeof account.access_token === "string") {
-        token.githubAccessToken = account.access_token;
+      const providerAccessToken =
+        typeof account?.access_token === "string"
+          ? account.access_token
+          : typeof (account as { accessToken?: unknown } | null)?.accessToken === "string"
+            ? ((account as { accessToken?: string }).accessToken ?? null)
+            : null;
+
+      if (account?.provider === "github" && providerAccessToken) {
+        token.githubAccessToken = providerAccessToken;
       }
 
       token.role = token.role ?? "user";
