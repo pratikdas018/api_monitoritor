@@ -50,10 +50,10 @@ export function IncidentTimeline({ incidents }: IncidentTimelineProps) {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 className="text-base font-semibold text-text-primary">{incident.monitorName}</h3>
-                <p className="text-sm text-text-secondary">{incident.monitorUrl}</p>
+                <p className="break-all text-sm text-text-secondary">{incident.monitorUrl}</p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${incidentStatusStyles[incident.status]}`}
                 >

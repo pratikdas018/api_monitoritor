@@ -12,7 +12,7 @@ export function ProjectCreateForm() {
   return (
     <section className="glass-card rounded-2xl border p-4">
       <h3 className="text-sm font-semibold text-text-primary">Create Project</h3>
-      <form action={formAction} className="mt-3 grid gap-2 md:grid-cols-3">
+      <form action={formAction} className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <input
           name="name"
           required
@@ -22,9 +22,13 @@ export function ProjectCreateForm() {
         <input
           name="description"
           placeholder="Description (optional)"
-          className="px-3 py-2 text-sm"
+          className="px-3 py-2 text-sm sm:col-span-2 lg:col-span-1"
         />
-        <SubmitButton label="Add Project" pendingLabel="Adding..." />
+        <SubmitButton
+          label="Add Project"
+          pendingLabel="Adding..."
+          className="w-full sm:col-span-2 lg:col-span-1"
+        />
       </form>
       <p
         className={`mt-2 text-xs ${
